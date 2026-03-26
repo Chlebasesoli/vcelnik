@@ -240,6 +240,57 @@
     .login-btn:disabled{filter:brightness(.5);cursor:default}
     .login-err{font-size:.82rem;color:var(--danger);text-align:center;min-height:18px}
     .login-ok{font-size:.82rem;color:var(--ok);text-align:center;min-height:18px}
+
+    /* ── Tip měsíce card ── */
+    .tip-card{background:var(--surface);border-radius:var(--r);padding:16px;margin-bottom:16px;
+              border-left:3px solid var(--amber);cursor:pointer;transition:filter .15s}
+    .tip-card:active{filter:brightness(.88)}
+    .tip-card-hdr{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+    .tip-card-emoji{font-size:1.6rem;line-height:1}
+    .tip-card-label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--amber)}
+    .tip-card-month{font-size:1rem;font-weight:700;color:var(--text)}
+    .tip-card-text{font-size:.8rem;color:var(--dim);line-height:1.55}
+    .tip-card-more{font-size:.72rem;color:var(--amber);margin-top:8px;font-weight:600}
+
+    /* ── Průvodce view ── */
+    #viewPruvodce .prv-hero{background:linear-gradient(135deg,var(--s3),var(--s2));
+      border-radius:var(--r);padding:18px;margin-bottom:16px;text-align:center}
+    #viewPruvodce .prv-hero-title{font-size:1.1rem;font-weight:800;color:var(--amber);margin-bottom:4px}
+    #viewPruvodce .prv-hero-sub{font-size:.78rem;color:var(--dim)}
+    .prv-months{display:flex;flex-direction:column;gap:8px;margin-bottom:24px}
+    .prv-month{background:var(--surface);border-radius:var(--r);overflow:hidden}
+    .prv-month-hdr{display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;
+                   user-select:none;transition:background .15s}
+    .prv-month-hdr:active{background:var(--s2)}
+    .prv-month.current .prv-month-hdr{background:linear-gradient(90deg,rgba(245,166,35,.18),transparent);
+                                       border-left:3px solid var(--amber)}
+    .prv-month-emoji{font-size:1.3rem;width:28px;text-align:center;flex-shrink:0}
+    .prv-month-name{font-size:.92rem;font-weight:700;flex:1}
+    .prv-month.current .prv-month-name{color:var(--amber)}
+    .prv-month-badge{font-size:.62rem;background:var(--amber);color:#1a1008;padding:2px 8px;
+                     border-radius:20px;font-weight:700;flex-shrink:0}
+    .prv-month-arrow{font-size:.75rem;color:var(--dim);transition:transform .2s;flex-shrink:0}
+    .prv-month.open .prv-month-arrow{transform:rotate(90deg)}
+    .prv-month-body{display:none;padding:0 16px 14px;border-top:1px solid var(--s2)}
+    .prv-month.open .prv-month-body{display:block}
+    .prv-month-short{font-size:.78rem;color:var(--dim);padding:10px 0 6px;font-style:italic}
+    .prv-month-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px}
+    .prv-month-list li{font-size:.8rem;color:var(--text);line-height:1.5;padding-left:16px;position:relative}
+    .prv-month-list li::before{content:'•';position:absolute;left:0;color:var(--amber)}
+    .prv-faq-title{font-size:.9rem;font-weight:700;color:var(--dim);text-transform:uppercase;
+                   letter-spacing:1px;margin-bottom:12px}
+    .prv-faq{display:flex;flex-direction:column;gap:7px}
+    .prv-faq-item{background:var(--surface);border-radius:var(--r);overflow:hidden}
+    .prv-faq-q{display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer;
+               user-select:none;font-size:.85rem;font-weight:600;transition:background .15s}
+    .prv-faq-q:active{background:var(--s2)}
+    .prv-faq-icon{color:var(--amber);font-size:.9rem;flex-shrink:0}
+    .prv-faq-arrow{font-size:.75rem;color:var(--dim);margin-left:auto;transition:transform .2s;flex-shrink:0}
+    .prv-faq-item.open .prv-faq-arrow{transform:rotate(90deg)}
+    .prv-faq-a{display:none;padding:0 16px 13px;font-size:.8rem;color:var(--dim);line-height:1.6;
+               border-top:1px solid var(--s2)}
+    .prv-faq-item.open .prv-faq-a{display:block}
+    .prv-faq-a p{margin:8px 0 0}
   </style>
 </head>
 <body>
@@ -296,6 +347,7 @@
 <!-- ── PŘEHLED ── -->
 <div class="view active" id="viewDash">
   <div class="dash-grid" id="dashGrid"></div>
+  <div id="tipMesiceCard"></div>
   <div class="sec"><h2 data-i18n="dash.recent">Poslední záznamy</h2></div>
   <div class="activity-list" id="recentList"></div>
 </div>
@@ -354,6 +406,18 @@
   <div class="task-list" id="taskList"></div>
 </div>
 
+<!-- ── PRŮVODCE ── -->
+<div class="view" id="viewPruvodce">
+  <div class="prv-hero">
+    <div class="prv-hero-title">📅 Roční průvodce Warré včelaře</div>
+    <div class="prv-hero-sub">Co dělat každý měsíc + nejčastější otázky</div>
+  </div>
+  <div class="sec"><h2>Měsíční kalendář</h2></div>
+  <div class="prv-months" id="prvMonths"></div>
+  <div class="prv-faq-title">Nejčastější otázky</div>
+  <div class="prv-faq" id="prvFaq"></div>
+</div>
+
 </main>
 
 <nav>
@@ -361,6 +425,7 @@
   <button onclick="showView('uly')" id="navUly"><span class="ni">🐝</span><span data-i18n="nav.hives">Úly</span></button>
   <button onclick="showView('stan')" id="navStan"><span class="ni">📍</span><span data-i18n="nav.stan">Stanoviště</span></button>
   <button onclick="showView('ukoly')" id="navUkoly"><span class="ni">✅</span><span data-i18n="nav.tasks">Úkoly</span></button>
+  <button onclick="showView('pruvodce')" id="navPruvodce"><span class="ni">📅</span><span data-i18n="nav.pruvodce">Průvodce</span></button>
 </nav>
 
 <!-- ══ MODAL: Úl ══ -->
@@ -1154,6 +1219,7 @@ const TRANSLATIONS={
     'nav.hives':'Úly',
     'nav.stan':'Stanoviště',
     'nav.tasks':'Úkoly',
+    'nav.pruvodce':'Průvodce',
     // Dashboard
     'dash.colonies':'Včelstev',
     'dash.boxes_total':'Nástavků celkem',
@@ -1644,6 +1710,7 @@ const TRANSLATIONS={
     'nav.hives':'Hives',
     'nav.stan':'Locations',
     'nav.tasks':'Tasks',
+    'nav.pruvodce':'Guide',
     // Dashboard
     'dash.colonies':'Colonies',
     'dash.boxes_total':'Boxes total',
@@ -2120,6 +2187,7 @@ const TRANSLATIONS={
     'nav.hives':'Beuten',
     'nav.stan':'Standorte',
     'nav.tasks':'Aufgaben',
+    'nav.pruvodce':'Kalender',
     // Dashboard
     'dash.colonies':'Völker',
     'dash.boxes_total':'Zargen gesamt',
@@ -2802,17 +2870,141 @@ function showView(v){
   document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));
   currentView=v;
-  const vmap={dash:'viewDash',uly:'viewUly',detail:'viewDetail',stan:'viewStan',ukoly:'viewUkoly'};
-  const nmap={dash:'navDash',uly:'navUly',detail:'navUly',stan:'navStan',ukoly:'navUkoly'};
+  const vmap={dash:'viewDash',uly:'viewUly',detail:'viewDetail',stan:'viewStan',ukoly:'viewUkoly',pruvodce:'viewPruvodce'};
+  const nmap={dash:'navDash',uly:'navUly',detail:'navUly',stan:'navStan',ukoly:'navUkoly',pruvodce:'navPruvodce'};
   document.getElementById(vmap[v]).classList.add('active');
   document.getElementById(nmap[v]).classList.add('active');
-  ({dash:renderDash,uly:renderHives,detail:renderDetail,stan:renderStan,ukoly:renderTasks}[v]||renderDash)();
+  ({dash:renderDash,uly:renderHives,detail:renderDetail,stan:renderStan,ukoly:renderTasks,pruvodce:renderPruvodce}[v]||renderDash)();
 }
 function goBack(){ showView('uly'); }
 
 // ════════════════════════════
 //  DASHBOARD
 // ════════════════════════════
+// ════════════════════════════
+//  PRŮVODCE – obsah & render
+// ════════════════════════════
+const PRV_MESICE=[
+  {e:'❄️', name:'Leden', badge:'Klid',
+   kratky:'Naprostý klid. Přezimující včelstvo neotvírejte. Pozorujte zvenku.',
+   body:['Zkontrolujte česno – nesmí být ucpané mrtvými včelami','Sledujte aktivitu zvenku – při mrazech je klid normální','Zkontrolujte Varroa dno: přirozený spad orientačně naznačuje sílu infestace','Při oteplení nad 8 °C mohou proběhnout čistící lety – je to dobré znamení','Doplňte si záznamy a naplánujte sezónu']},
+  {e:'🌨️', name:'Únor', badge:'Klid',
+   kratky:'Královna začíná klást, zásoby se spotřebovávají rychleji. Stále nekontrolovat.',
+   body:['Sledujte spotřebu zásob – poklepem na úl (dutý zvuk = prázdné plásty) lze odhadnout stav','Připravte nástavky, rámky a vybavení na sezónu','Při teplotách nad 10 °C proběhnou první čistící lety – sledujte jejich intenzitu','Výroba mezistěn, oprava nářadí – čas na dílnu','Objednejte cukr pro případné jarní přikrmování']},
+  {e:'🌱', name:'Březen', badge:'Start sezóny',
+   kratky:'První jarní prohlídka – jen při stabilním počasí nad 14 °C. Stručně a rychle.',
+   body:['Minimální prohlídka: plod přítomen? Matka aktivní? Zásoby dostatečné?','Nikdy nezvedejte rámky zbytečně – narušíte tepelný profil','Nadíření: obsazují-li včely spodní nástavek ze 2/3, přidejte nový nástavek zdola','Sledujte první snůšku z vrby, lísky a bledule','Při nedostatku zásob přikrmte kandí (ne sirupem) přímo do úlu']},
+  {e:'🌸', name:'Duben', badge:'⚠️ Rojová sezóna',
+   kratky:'Začíná rojová nálada. Nadíření je hlavní prevencí. Kontrolujte každých 10 dní.',
+   body:['Přidávejte nástavky dole (nadíření) jakmile včely obsazují spodní nástavek z poloviny','Sledujte rohové matečníky – předznamenávají rojení','Kvetou ovocné stromy, řepka – hlavní jarní snůška začíná','Vyřaďte staré černé plásty (starší 3–4 roky), přetavte na vosk','Ujistěte se, že česno není omezené – včely potřebují volný průchod']},
+  {e:'🌼', name:'Květen', badge:'⚠️ Vrchol rojů',
+   kratky:'Vrchol rojové nálady. Silná snůška. Kontrolujte týdně, přidávejte nástavky.',
+   body:['Kontrolujte každých 7 dní v době rojové nálady','Pokud najdete matečníky a přeplněný úl – přidejte nástavek nebo rozdělte včelstvo','Hlavní snůška: řepka, ovocné stromy, javorovník, pampelišky','Silné včelstvo by mělo obsazovat 3–4 nástavky','Umístěte rojovou skříňku v blízkosti – zachyťte případný roj']},
+  {e:'🌻', name:'Červen', badge:'Snůška',
+   kratky:'Lípa, jetel, maliny. Sledujte horní nástavek – brzy sklizeň.',
+   body:['Kvetou lípa, jetel, maliny, černý rybíz – dobrá snůška','Sledujte zaplnění horního nástavku: 80 % zavíčkovaného medu = čas na sklizeň','Rojová nálada postupně ustupuje','Přidávejte nástavky zdola pokud je úl stále silný','Zaznamenejte počet obsazených nástavků – indikátor síly včelstva']},
+  {e:'🍯', name:'Červenec', badge:'Sklizeň!',
+   kratky:'Čas sklizně! Odeberte horní nástavek plný zavíčkovaného medu.',
+   body:['Odeberte horní nástavek pouze pokud je ze 80 %+ zaplněn zavíčkovaným medem','Sežeňte včely kouřem dolů, nevytřepávejte rámky','Zkontrolujte zásoby na zimu (min. 12–15 kg = 1–2 nástavky)','Začněte plánovat podzimní léčení Varroa','Sledujte česno – zvýšená aktivita vosy']},
+  {e:'🍂', name:'Srpen', badge:'Varroa léčení',
+   kratky:'Ideální čas na léčení varroa. Zkontrolujte zimní zásoby.',
+   body:['Proveďte léčení kyselinou šťavelovou (KŠ) – sublimace nebo kapání na bezplodové včelstvo','Pokud je plod stále přítomen, léčte KŠ kapáním (3× s týdenním odstupem)','Zkontrolujte zásoby: méně než 12 kg = přikrmte','Cukrový sirup 2:1 podávejte po večerech (méně loupeže)','Sledujte stav matek – srpen je čas přirozeného výběru']},
+  {e:'🍁', name:'Září', badge:'Příprava na zimu',
+   kratky:'Poslední přikrmování do 15. září. Zúžení česna. Myší zábrana.',
+   body:['Dokrmte do 15. září – pozdější syrup včely nestihnou přepracovat','Zužte česno na zimní šířku (2–3 cm)','Nainstalujte myší zábranu (pletivo s oky 8 mm)','Zkontrolujte střechu a těsnost – vlhkost je větší nepřítel než mráz','Poslední prohlídka sezóny – zaznamenejte stav do deníku']},
+  {e:'🌫️', name:'Říjen', badge:'Zimování',
+   kratky:'Zimní klid nastává. Žádné prohlídky. Ochrana před větrem a vlhkostí.',
+   body:['Přísná zimní příprava – nekontrolujte vnitřek','Zajistěte odvětrávání pod stříškou (vlhkost kondenzuje)','Ochraňte úl před větrem (orientace česna na jih/jihovýchod)','Varroa dno zkontrolujte zvenku – nesmí být ucpané','Zaznamenejte všechny aktivity do deníku před zimou']},
+  {e:'🌑', name:'Listopad', badge:'Klid',
+   kratky:'Zimní klid. Čas na vzdělávání a plánování příštího roku.',
+   body:['Včely tvoří zimní shluk – neotvírejte a nerušte','Zkontrolujte zvenku: česno průchozí, střecha nepoškozená','Přečtěte si literaturu – Warré, Müller, Fatke','Naplánujte počet úlů a stanovišť na příští rok','Přihlaste se na kurzy nebo setkání včelařů']},
+  {e:'🕯️', name:'Prosinec', badge:'Klid',
+   kratky:'Naprostý klid. Rychlá vizuální kontrola zvenku, revize zápisků ze sezóny.',
+   body:['Rychlá vizuální prohlídka zvenku – česno, střecha, stabilita úlu','Revize zápisků z celé sezóny – co fungovalo, co ne?','Plánujte nadíření a rozšíření pro příští rok','Vyrobte nebo nakupte nové nástavky a rámky','Přejte si navzájem úspěšnou sezónu 🍯']}
+];
+
+const PRV_FAQ=[
+  {q:'Kdy nadíruji?',
+   a:'Jakmile včely obsazují spodní nástavek ze 2/3. U Warré se nástavky přidávají vždy zdola (nadir) – nikdy nahoře. Jarní nadíření (březen–duben) je nejdůležitější prevencí rojení.'},
+  {q:'Jak poznám, že je matka přítomna?',
+   a:'Hledejte čerstvý plod – vajíčka (viditelná pod světlem jako zrnka rýže) nebo mladé larvy. Matku samotnou nemusíte vidět. Pokud je plod v pořádku, matka pracuje.'},
+  {q:'Co dělat s rojem?',
+   a:'Zachyťte ho do rojové skříňky (dřevěná krabice s rámky). Večer přemístěte na nové stanoviště. Roj = přírodní množení. Silné roje jsou cenné – nezahazujte je.'},
+  {q:'Jak léčit varroa v přirozené včelařství?',
+   a:'Kyselina šťavelová (KŠ) je schválená i pro BIO včelaře. Nejúčinnější je sublimace (odpařování) na bezplodové včelstvo (zima nebo léto po sklizni). Kapání 3× s týdenním odstupem při přítomnosti plodu.'},
+  {q:'Musím kontrolovat každý týden?',
+   a:'Ne. Warré filozofie: méně je více. Jarní prohlídka + kontrola rojení (duben–červen) + sklizeň + podzimní příprava. Každé otevření úlu narušuje tepelný a pachový profil, který včely musí obnovit.'},
+  {q:'Jak poznám kdy sklízet?',
+   a:'Horní nástavek by měl být ze 80 %+ zaplněn zavíčkovaným medem. Nekontrolujte rámky zbytečně – stačí sehnat včely kouřem dolů a odebrat celý nástavek.'},
+  {q:'Kolik medu nechám včelám?',
+   a:'Minimum 12–15 kg na přezimování (přibližně 1–2 plné nástavky). Nikdy nevyberte vše! Včely musí mít dostatek zásob do první jarní snůšky (konec března).'},
+  {q:'Co je teplá a studená cesta?',
+   a:'Teplá cesta: plásty rovnoběžně s česnem – lépe drží teplo, Warré ji doporučoval jako základní nastavení (podzim/zima). Studená cesta: plásty kolmo na česno – lepší ventilace (jaro/léto). Mění se otočením rámků o 90°.'},
+  {q:'Co je Varroa dno?',
+   a:'Síťované dno umožňuje přirozený spad roztočů. Vložte bílou podložku a po 3 dnech spočítejte spad. Více než 10 roztočů/den v létě = nutné léčení. V zimě stačí 1–2/den.'},
+  {q:'Kdy první prohlídka na jaře?',
+   a:'Nejdříve při stabilních teplotách nad 14 °C (typicky duben). Prohlídku proveďte rychle a minimálně – zkontrolujte plod, zásoby a počet obsazených nástavků. Ihned zavřete.'},
+  {q:'Jak kombinovat dvě slabá včelstva?',
+   a:'Metoda novinového papíru: Odstraňte jednu matku. Položte noviny na horní nástavek silnějšího včelstva, propíchněte dírku. Postavte slabší včelstvo nahoře. Včely noviny prokousají a splynou.'},
+  {q:'Co dělat se starými černými plásty?',
+   a:'Plásty starší 3–4 roky vyřaďte. Přetavte na vosk (filtrace přes plátno). Nové plásty začínají bílé/žluté – tmavnutím akumulují výkaly a patogeny. Pravidelná obnova chrání zdraví včelstva.'},
+  {q:'Proč Warré nedoporučoval pravidelné prohlídky?',
+   a:'Každé otevření úlu: 1) Narušuje tepelný profil (including lišty a propolis), 2) Šíří pachy alarmu, 3) Přeruší snůšku na 1–2 dny. Warré věřil v přirozenou rovnováhu – včely vědí nejlépe.'},
+  {q:'Jak zazimovat správně?',
+   a:'Zúžit česno (2–3 cm), myší zábrana, sucho pod stříškou, 12–15 kg zásob, odvětrávání shora (ne průvan). Nekrmit po 15. září. Orientace česna na jih/jihovýchod – ranní slunce aktivuje léty.'},
+  {q:'Jaká je ideální velikost Warré úlu?',
+   a:'Standardní Warré nástavek: 300×300 mm vnitřní rozměr, výška 210 mm. Horní lišty bez mezistěn – plásty staví přirozeně. Střecha s polštářem (dřevěné hobloviny nebo suchá tráva) pro regulaci vlhkosti.'}
+];
+
+function renderTipMesice(){
+  const m=new Date().getMonth(); // 0=leden
+  const mes=PRV_MESICE[m];
+  const el=document.getElementById('tipMesiceCard');
+  if(!el||!mes)return;
+  el.innerHTML=`<div class="tip-card" onclick="showView('pruvodce');setTimeout(()=>{const el=document.getElementById('prvm-${m}');if(el){el.classList.add('open');el.scrollIntoView({behavior:'smooth',block:'start'})}},120)">
+    <div class="tip-card-hdr">
+      <span class="tip-card-emoji">${mes.e}</span>
+      <div><div class="tip-card-label">Tip měsíce</div><div class="tip-card-month">${mes.name}</div></div>
+    </div>
+    <div class="tip-card-text">${mes.kratky}</div>
+    <div class="tip-card-more">Otevřít roční průvodce →</div>
+  </div>`;
+}
+
+function renderPruvodce(){
+  const m=new Date().getMonth();
+  const pm=document.getElementById('prvMonths');
+  if(!pm)return;
+  pm.innerHTML=PRV_MESICE.map((mes,i)=>`
+    <div class="prv-month${i===m?' current':''}" id="prvm-${i}">
+      <div class="prv-month-hdr" onclick="this.parentElement.classList.toggle('open')">
+        <span class="prv-month-emoji">${mes.e}</span>
+        <span class="prv-month-name">${mes.name}</span>
+        ${i===m?`<span class="prv-month-badge">Nyní</span>`:''}
+        <span class="prv-month-arrow">›</span>
+      </div>
+      <div class="prv-month-body">
+        <div class="prv-month-short">${mes.kratky}</div>
+        <ul class="prv-month-list">${mes.body.map(b=>`<li>${b}</li>`).join('')}</ul>
+      </div>
+    </div>`).join('');
+  // Auto-open current month
+  const cur=document.getElementById(`prvm-${m}`);
+  if(cur)cur.classList.add('open');
+
+  const pf=document.getElementById('prvFaq');
+  if(!pf)return;
+  pf.innerHTML=PRV_FAQ.map((f,i)=>`
+    <div class="prv-faq-item" id="faq-${i}">
+      <div class="prv-faq-q" onclick="this.parentElement.classList.toggle('open')">
+        <span class="prv-faq-icon">❓</span>
+        <span>${f.q}</span>
+        <span class="prv-faq-arrow">›</span>
+      </div>
+      <div class="prv-faq-a"><p>${f.a}</p></div>
+    </div>`).join('');
+}
+
 function renderDash(){
   const totalB=data.hives.reduce((s,h)=>s+(h.nastavky?.length||0),0);
   const openT=data.tasks.filter(t=>!t.done).length;
@@ -2821,6 +3013,7 @@ function renderDash(){
     <div class="dash-box"><span class="dash-icon">📦</span><div><div class="dash-val">${totalB}</div><div class="dash-label">${t('dash.boxes_total')}</div></div></div>
     <div class="dash-box"><span class="dash-icon">📍</span><div><div class="dash-val">${data.stanoviste.length}</div><div class="dash-label">${t('dash.apiaries')}</div></div></div>
     <div class="dash-box"><span class="dash-icon">✅</span><div><div class="dash-val">${openT}</div><div class="dash-label">${t('dash.open_tasks')}</div></div></div>`;
+  renderTipMesice();
   const recent=[...data.records].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8);
   const rl=document.getElementById('recentList');
   if(!recent.length){rl.innerHTML=`<div class="empty"><div class="ei">📭</div><p>${t('dash.empty')}</p></div>`;return;}
