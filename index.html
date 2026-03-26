@@ -632,9 +632,9 @@
       <div class="fg"><label data-i18n="rec_modal.nadir_count">Počet přidávaných nástavků</label><input id="recNadirPocet" type="number" min="1" max="5" value="1"/></div>
       <div class="fg"><label data-i18n="rec_modal.nadir_frame">Typ rámků v nástavku</label>
         <div class="tog-row" style="flex-wrap:wrap;gap:6px">
-          <button class="tog-btn active" data-f="nadirFrame" data-v="lišty" onclick="togField(this,'nadirFrame')" data-i18n="frame.listy">🪵 Dřevěné lišty</button>
-          <button class="tog-btn" data-f="nadirFrame" data-v="plast-lišty" onclick="togField(this,'nadirFrame')" data-i18n="frame.plast">🔧 Plastové lišty</button>
-          <button class="tog-btn" data-f="nadirFrame" data-v="rámky" onclick="togField(this,'nadirFrame')" data-i18n="frame.ramky">📋 Plné rámky</button>
+          <button class="tog-btn active" data-f="nadirFrame" data-v="horní loučky" onclick="togField(this,'nadirFrame')" data-i18n="frame.loucky">🪵 Horní loučky</button>
+          <button class="tog-btn" data-f="nadirFrame" data-v="Dělenův rámek" onclick="togField(this,'nadirFrame')" data-i18n="frame.delen">🔲 Dělenův rámek</button>
+          <button class="tog-btn" data-f="nadirFrame" data-v="Hoffmanův dřevěný" onclick="togField(this,'nadirFrame')" data-i18n="frame.hoffman">🟫 Hoffmanův dřevěný</button>
         </div>
       </div>
       <p style="font-size:.78rem;color:var(--dim);padding:4px 0" data-i18n="rec_modal.nadir_info">📦 Nástavky budou přidány ke dnu věže (nadíření).</p>
@@ -1230,9 +1230,9 @@ const TRANSLATIONS={
     'rec.plasty':'Rovnost plástů',
     'rec.default':'Záznam',
     // Frame types
-    'frame.listy':'🪵 Dřevěné lišty',
-    'frame.plast':'🔧 Plastové lišty',
-    'frame.ramky':'📋 Plné rámky',
+    'frame.loucky':'🪵 Horní loučky',
+    'frame.delen':'🔲 Dělenův rámek',
+    'frame.hoffman':'🟫 Hoffmanův dřevěný',
     // Varroa bottom
     'varroa.spad':'📋 Přirozený spad',
     'varroa.alkohol':'🧪 Alkoholový test',
@@ -1715,9 +1715,9 @@ const TRANSLATIONS={
     'rec.poznamka':'Note',
     'rec.varroaDno':'Varroa – bottom board',
     'rec.plasty':'Comb straightness',
-    'frame.listy':'🪵 Wooden top bars',
-    'frame.plast':'🔧 Plastic top bars',
-    'frame.ramky':'📋 Full frames',
+    'frame.loucky':'🪵 Top bars only',
+    'frame.delen':'🔲 Delene frame',
+    'frame.hoffman':'🟫 Hoffman wooden frame',
     'varroa.spad':'📋 Natural drop','varroa.alkohol':'🧪 Alcohol wash','varroa.cukr':'🍬 Sugar roll',
     'varroa.ok':'✅ OK','varroa.pozor':'⚠️ Watch','varroa.kriticke':'🚨 Critical',
     'plasty.rovne':'✅ Straight','plasty.mirne':'↗️ Slightly skewed','plasty.sikme':'⚠️ Skewed','plasty.krizove':'🚨 Crossed',
@@ -2190,7 +2190,7 @@ const TRANSLATIONS={
     'rec.poznamka':'Notiz',
     'rec.varroaDno':'Varroa – Windel',
     'rec.plasty':'Wabengradheit',
-    'frame.listy':'🪵 Holzleisten','frame.plast':'🔧 Kunststoffleisten','frame.ramky':'📋 Vollrahmen',
+    'frame.loucky':'🪵 Oberleisten','frame.delen':'🔲 Delene-Rahmen','frame.hoffman':'🟫 Hoffman-Holzrahmen',
     'varroa.spad':'📋 Natürlicher Abfall','varroa.alkohol':'🧪 Alkoholtest','varroa.cukr':'🍬 Puderzuckertest',
     'varroa.ok':'✅ OK','varroa.pozor':'⚠️ Achtung','varroa.kriticke':'🚨 Kritisch',
     'plasty.rovne':'✅ Gerade','plasty.mirne':'↗️ Leicht schief','plasty.sikme':'⚠️ Schief','plasty.krizove':'🚨 Überkreuzt',
@@ -3246,7 +3246,7 @@ function renderTower(h){
     const isTop=i===0, isBot=i===ns.length-1;
     const lbl=isTop?t('tower.top'):isBot&&ns.length>1?t('tower.bottom'):t('tower.middle');
     const cls=isTop?'top-box':isBot?'bot-box':'mid-box';
-    const frameIcon={'lišty':'🪵','plast-lišty':'🔧','rámky':'📋'}[b.frame]||'';
+    const frameIcon={'horní loučky':'🪵','Dělenův rámek':'🔲','Hoffmanův dřevěný':'🟫'}[b.frame]||'';
     const frameLabel=b.frame?` <span style="font-size:.65rem;color:var(--dim);background:var(--bg);padding:1px 6px;border-radius:10px;margin-left:4px">${frameIcon} ${b.frame}</span>`:'';
     return`<div class="tower-box ${cls}">
       <span class="tb-num">${i+1}</span>
