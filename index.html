@@ -3465,15 +3465,10 @@ function fillSelect(id,selectedId,skipEmpty=false,withEmpty=false){
 //  INIT
 // ════════════════════════════
 applyTranslations();
-// Unregister old service workers and reload so they no longer control the page
+// Register the no-op SW (v6). It uses skipWaiting()+clients.claim() so it
+// immediately replaces any old SW that was intercepting Supabase API calls.
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.getRegistrations().then(regs=>{
-    if(regs.length>0){
-      Promise.all(regs.map(r=>r.unregister())).then(()=>{
-        window.location.reload();
-      });
-    }
-  });
+  navigator.serviceWorker.register('/vcelnik/sw.js').catch(()=>{});
 }
 
 // Handle email confirmation redirect (token in URL hash)
