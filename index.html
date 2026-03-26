@@ -595,6 +595,8 @@
       <button class="type-btn" data-type="polstar" onclick="setRecType('polstar')"><div class="ti">🧶</div><div class="tl2" data-i18n="rec.polstar">Polštář</div></button>
       <button class="type-btn" data-type="otoceni" onclick="setRecType('otoceni')"><div class="ti">↕️</div><div class="tl2" data-i18n="rec.otoceni">Otočení cesty</div></button>
       <button class="type-btn" data-type="poznamka" onclick="setRecType('poznamka')"><div class="ti">📝</div><div class="tl2" data-i18n="rec.poznamka">Poznámka</div></button>
+      <button class="type-btn" data-type="varroaDno" onclick="setRecType('varroaDno')"><div class="ti">🔬</div><div class="tl2" data-i18n="rec.varroaDno">Varroa – dno</div></button>
+      <button class="type-btn" data-type="plasty" onclick="setRecType('plasty')"><div class="ti">📐</div><div class="tl2" data-i18n="rec.plasty">Rovnost plástů</div></button>
       <button class="type-btn" data-type="matka" onclick="setRecType('matka')" style="grid-column:span 3"><div class="ti">👑</div><div class="tl2" data-i18n="rec.matka">Událost matky</div></button>
     </div>
 
@@ -628,6 +630,13 @@
 
     <div class="dyn-form" id="df-nadireni">
       <div class="fg"><label data-i18n="rec_modal.nadir_count">Počet přidávaných nástavků</label><input id="recNadirPocet" type="number" min="1" max="5" value="1"/></div>
+      <div class="fg"><label data-i18n="rec_modal.nadir_frame">Typ rámků v nástavku</label>
+        <div class="tog-row" style="flex-wrap:wrap;gap:6px">
+          <button class="tog-btn active" data-f="nadirFrame" data-v="lišty" onclick="togField(this,'nadirFrame')" data-i18n="frame.listy">🪵 Dřevěné lišty</button>
+          <button class="tog-btn" data-f="nadirFrame" data-v="plast-lišty" onclick="togField(this,'nadirFrame')" data-i18n="frame.plast">🔧 Plastové lišty</button>
+          <button class="tog-btn" data-f="nadirFrame" data-v="rámky" onclick="togField(this,'nadirFrame')" data-i18n="frame.ramky">📋 Plné rámky</button>
+        </div>
+      </div>
       <p style="font-size:.78rem;color:var(--dim);padding:4px 0" data-i18n="rec_modal.nadir_info">📦 Nástavky budou přidány ke dnu věže (nadíření).</p>
     </div>
 
@@ -677,6 +686,60 @@
           <button class="tog-btn" data-f="otSmer" data-v="teplá" onclick="togField(this,'otSmer')" data-i18n="path.warm">🔆 Teplá cesta (zima)</button>
           <button class="tog-btn" data-f="otSmer" data-v="studená" onclick="togField(this,'otSmer')" data-i18n="path.cold">❄️ Studená cesta (léto)</button>
         </div>
+      </div>
+    </div>
+
+    <div class="dyn-form" id="df-varroaDno">
+      <div style="background:var(--s2);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:.78rem;line-height:1.5;color:var(--dim)">
+        <strong style="color:var(--text);display:block;margin-bottom:4px" data-i18n="rec_modal.varroa_dno_title">🔬 Co je kontrola varroa dna?</strong>
+        <span data-i18n="rec_modal.varroa_dno_info">Přirozený spad – do dna se vloží lepová podložka a po stanovenou dobu se sleduje, kolik roztočů přirozeně odpadne. Výsledek se přepočítává na přirozený spad za 24 h.</span><br><br>
+        <span style="color:#7ab648" data-i18n="rec_modal.varroa_dno_ok">✅ OK:</span> <span data-i18n="rec_modal.varroa_dno_ok_val">&lt; 1 roztoč/den</span><br>
+        <span style="color:#f5a623" data-i18n="rec_modal.varroa_dno_warn">⚠️ Pozor:</span> <span data-i18n="rec_modal.varroa_dno_warn_val">1–3 roztoči/den</span><br>
+        <span style="color:#e05a2b" data-i18n="rec_modal.varroa_dno_crit">🚨 Kritické:</span> <span data-i18n="rec_modal.varroa_dno_crit_val">&gt; 3 roztoči/den → léčení nutné</span>
+      </div>
+      <div class="row2">
+        <div class="fg"><label data-i18n="rec_modal.varroa_count">Počet roztoček</label><input id="recVarroaCount" type="number" min="0" step="1" placeholder="0"/></div>
+        <div class="fg"><label data-i18n="rec_modal.varroa_hours">Doba sledování (h)</label>
+          <select id="recVarroaHours">
+            <option value="24">24 h</option><option value="48">48 h</option><option value="72">72 h</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><label data-i18n="rec_modal.varroa_method">Metoda</label>
+        <div class="tog-row" style="flex-wrap:wrap;gap:6px">
+          <button class="tog-btn active" data-f="varroaMetoda" data-v="přirozený spad" onclick="togField(this,'varroaMetoda')" data-i18n="varroa.spad">📋 Přirozený spad</button>
+          <button class="tog-btn" data-f="varroaMetoda" data-v="alkohol" onclick="togField(this,'varroaMetoda')" data-i18n="varroa.alkohol">🧪 Alkoholový test</button>
+          <button class="tog-btn" data-f="varroaMetoda" data-v="cukr" onclick="togField(this,'varroaMetoda')" data-i18n="varroa.cukr">🍬 Cukrový roll</button>
+        </div>
+      </div>
+      <div class="fg"><label data-i18n="rec_modal.varroa_result">Zhodnocení</label>
+        <div class="tog-row">
+          <button class="tog-btn" data-f="varroaVysledek" data-v="ok" onclick="togField(this,'varroaVysledek')" style="color:#7ab648;border-color:#7ab648" data-i18n="varroa.ok">✅ OK</button>
+          <button class="tog-btn" data-f="varroaVysledek" data-v="pozor" onclick="togField(this,'varroaVysledek')" style="color:#f5a623;border-color:#f5a623" data-i18n="varroa.pozor">⚠️ Pozor</button>
+          <button class="tog-btn" data-f="varroaVysledek" data-v="kritické" onclick="togField(this,'varroaVysledek')" style="color:#e05a2b;border-color:#e05a2b" data-i18n="varroa.kriticke">🚨 Kritické</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="dyn-form" id="df-plasty">
+      <div style="background:var(--s2);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:.78rem;line-height:1.5;color:var(--dim)">
+        <strong style="color:var(--text);display:block;margin-bottom:4px" data-i18n="rec_modal.plasty_title">📐 Proč záleží na rovnosti plástů?</strong>
+        <span data-i18n="rec_modal.plasty_info">Ve Warré úlu bez plných rámků si včely staví volnou plást na lištách. Pokud jsou šikmé nebo křížové, hrozí propojení mezi nástavky – pak nelze nástavky oddělit při nadírání nebo sklizni. Rovné plásty jsou základ správné funkce Warré úlu.</span><br><br>
+        <span style="color:var(--text)" data-i18n="rec_modal.plasty_rov">✅ Rovné</span> – <span data-i18n="rec_modal.plasty_rov_desc">ideální, vše v pořádku.</span><br>
+        <span style="color:var(--text)" data-i18n="rec_modal.plasty_mirne">↗️ Mírně šikmé</span> – <span data-i18n="rec_modal.plasty_mirne_desc">sledovat, zatím bez zásahu.</span><br>
+        <span style="color:var(--text)" data-i18n="rec_modal.plasty_sikme">⚠️ Šikmé</span> – <span data-i18n="rec_modal.plasty_sikme_desc">riziko propojení, zvážit korekci při příští příležitosti.</span><br>
+        <span style="color:var(--text)" data-i18n="rec_modal.plasty_kriz">🚨 Křížové</span> – <span data-i18n="rec_modal.plasty_kriz_desc">propojení nástavků, nutný zásah.</span>
+      </div>
+      <div class="fg"><label data-i18n="rec_modal.plasty_stav">Stav plástů</label>
+        <div class="tog-row" style="flex-wrap:wrap;gap:6px">
+          <button class="tog-btn" data-f="plastyStav" data-v="rovné" onclick="togField(this,'plastyStav')" style="color:#7ab648;border-color:#7ab648" data-i18n="plasty.rovne">✅ Rovné</button>
+          <button class="tog-btn" data-f="plastyStav" data-v="mírně šikmé" onclick="togField(this,'plastyStav')" data-i18n="plasty.mirne">↗️ Mírně šikmé</button>
+          <button class="tog-btn" data-f="plastyStav" data-v="šikmé" onclick="togField(this,'plastyStav')" style="color:#f5a623;border-color:#f5a623" data-i18n="plasty.sikme">⚠️ Šikmé</button>
+          <button class="tog-btn" data-f="plastyStav" data-v="křížové" onclick="togField(this,'plastyStav')" style="color:#e05a2b;border-color:#e05a2b" data-i18n="plasty.krizove">🚨 Křížové</button>
+        </div>
+      </div>
+      <div class="fg"><label data-i18n="rec_modal.plasty_nastavek">Nástavek (číslo, volitelně)</label>
+        <input id="recPlastyNastavek" type="text" placeholder="1, 2, …" maxlength="10"/>
       </div>
     </div>
 
@@ -1163,7 +1226,44 @@ const TRANSLATIONS={
     'rec.poznamka':'Poznámka',
     'rec.matka':'Událost matky',
     'rec.prevzeti':'Převzetí včelstva',
+    'rec.varroaDno':'Varroa – dno',
+    'rec.plasty':'Rovnost plástů',
     'rec.default':'Záznam',
+    // Frame types
+    'frame.listy':'🪵 Dřevěné lišty',
+    'frame.plast':'🔧 Plastové lišty',
+    'frame.ramky':'📋 Plné rámky',
+    // Varroa bottom
+    'varroa.spad':'📋 Přirozený spad',
+    'varroa.alkohol':'🧪 Alkoholový test',
+    'varroa.cukr':'🍬 Cukrový roll',
+    'varroa.ok':'✅ OK',
+    'varroa.pozor':'⚠️ Pozor',
+    'varroa.kriticke':'🚨 Kritické',
+    // Comb straightness
+    'plasty.rovne':'✅ Rovné',
+    'plasty.mirne':'↗️ Mírně šikmé',
+    'plasty.sikme':'⚠️ Šikmé',
+    'plasty.krizove':'🚨 Křížové',
+    // Form labels
+    'rec_modal.nadir_frame':'Typ rámků v nástavku',
+    'rec_modal.varroa_dno_title':'🔬 Co je kontrola varroa dna?',
+    'rec_modal.varroa_dno_info':'Přirozený spad – do dna se vloží lepová podložka a po stanovenou dobu se sleduje, kolik roztočů přirozeně odpadne.',
+    'rec_modal.varroa_dno_ok':'✅ OK:','rec_modal.varroa_dno_ok_val':'< 1 roztoč/den',
+    'rec_modal.varroa_dno_warn':'⚠️ Pozor:','rec_modal.varroa_dno_warn_val':'1–3 roztoči/den',
+    'rec_modal.varroa_dno_crit':'🚨 Kritické:','rec_modal.varroa_dno_crit_val':'> 3 roztoči/den → léčení nutné',
+    'rec_modal.varroa_count':'Počet roztoček',
+    'rec_modal.varroa_hours':'Doba sledování (h)',
+    'rec_modal.varroa_method':'Metoda',
+    'rec_modal.varroa_result':'Zhodnocení',
+    'rec_modal.plasty_title':'📐 Proč záleží na rovnosti plástů?',
+    'rec_modal.plasty_info':'Ve Warré úlu bez plných rámků si včely staví volnou plást. Šikmé nebo křížové plásty hrozí propojením mezi nástavky.',
+    'rec_modal.plasty_rov':'✅ Rovné','rec_modal.plasty_rov_desc':'ideální, vše v pořádku.',
+    'rec_modal.plasty_mirne':'↗️ Mírně šikmé','rec_modal.plasty_mirne_desc':'sledovat, zatím bez zásahu.',
+    'rec_modal.plasty_sikme':'⚠️ Šikmé','rec_modal.plasty_sikme_desc':'riziko propojení, zvážit korekci.',
+    'rec_modal.plasty_kriz':'🚨 Křížové','rec_modal.plasty_kriz_desc':'propojení nástavků, nutný zásah.',
+    'rec_modal.plasty_stav':'Stav plástů',
+    'rec_modal.plasty_nastavek':'Nástavek (číslo, volitelně)',
     // Record summary labels
     'sum.aktivita':'aktivita: ',
     'sum.pyl':'pyl: ',
@@ -1613,6 +1713,29 @@ const TRANSLATIONS={
     'rec.polstar':'Quilt',
     'rec.otoceni':'Path rotation',
     'rec.poznamka':'Note',
+    'rec.varroaDno':'Varroa – bottom board',
+    'rec.plasty':'Comb straightness',
+    'frame.listy':'🪵 Wooden top bars',
+    'frame.plast':'🔧 Plastic top bars',
+    'frame.ramky':'📋 Full frames',
+    'varroa.spad':'📋 Natural drop','varroa.alkohol':'🧪 Alcohol wash','varroa.cukr':'🍬 Sugar roll',
+    'varroa.ok':'✅ OK','varroa.pozor':'⚠️ Watch','varroa.kriticke':'🚨 Critical',
+    'plasty.rovne':'✅ Straight','plasty.mirne':'↗️ Slightly skewed','plasty.sikme':'⚠️ Skewed','plasty.krizove':'🚨 Crossed',
+    'rec_modal.nadir_frame':'Frame type in box',
+    'rec_modal.varroa_dno_title':'🔬 What is varroa bottom board check?',
+    'rec_modal.varroa_dno_info':'Natural drop – insert a sticky board into the bottom and count fallen mites over a set period. Results are expressed as mites per 24h.',
+    'rec_modal.varroa_dno_ok':'✅ OK:','rec_modal.varroa_dno_ok_val':'< 1 mite/day',
+    'rec_modal.varroa_dno_warn':'⚠️ Watch:','rec_modal.varroa_dno_warn_val':'1–3 mites/day',
+    'rec_modal.varroa_dno_crit':'🚨 Critical:','rec_modal.varroa_dno_crit_val':'> 3 mites/day → treatment required',
+    'rec_modal.varroa_count':'Mite count','rec_modal.varroa_hours':'Observation period (h)',
+    'rec_modal.varroa_method':'Method','rec_modal.varroa_result':'Assessment',
+    'rec_modal.plasty_title':'📐 Why does comb straightness matter?',
+    'rec_modal.plasty_info':'In a Warré hive without full frames, bees build free comb on top bars. Skewed or crossed combs risk joining boxes together.',
+    'rec_modal.plasty_rov':'✅ Straight','rec_modal.plasty_rov_desc':'ideal, all good.',
+    'rec_modal.plasty_mirne':'↗️ Slightly skewed','rec_modal.plasty_mirne_desc':'monitor, no action yet.',
+    'rec_modal.plasty_sikme':'⚠️ Skewed','rec_modal.plasty_sikme_desc':'risk of joining, consider correction.',
+    'rec_modal.plasty_kriz':'🚨 Crossed','rec_modal.plasty_kriz_desc':'boxes joined, intervention needed.',
+    'rec_modal.plasty_stav':'Comb condition','rec_modal.plasty_nastavek':'Box number (optional)',
     'rec.matka':'Queen event',
     'rec.prevzeti':'Colony acquisition',
     'rec.default':'Record',
@@ -2065,6 +2188,27 @@ const TRANSLATIONS={
     'rec.polstar':'Kissen',
     'rec.otoceni':'Wegdrehung',
     'rec.poznamka':'Notiz',
+    'rec.varroaDno':'Varroa – Windel',
+    'rec.plasty':'Wabengradheit',
+    'frame.listy':'🪵 Holzleisten','frame.plast':'🔧 Kunststoffleisten','frame.ramky':'📋 Vollrahmen',
+    'varroa.spad':'📋 Natürlicher Abfall','varroa.alkohol':'🧪 Alkoholtest','varroa.cukr':'🍬 Puderzuckertest',
+    'varroa.ok':'✅ OK','varroa.pozor':'⚠️ Achtung','varroa.kriticke':'🚨 Kritisch',
+    'plasty.rovne':'✅ Gerade','plasty.mirne':'↗️ Leicht schief','plasty.sikme':'⚠️ Schief','plasty.krizove':'🚨 Überkreuzt',
+    'rec_modal.nadir_frame':'Rahmentyp in der Zarge',
+    'rec_modal.varroa_dno_title':'🔬 Was ist die Windelbodenkontrolle?',
+    'rec_modal.varroa_dno_info':'Natürlicher Abfall – Einlegen einer Klebeplatte und Zählen der abgefallenen Milben über einen festgelegten Zeitraum.',
+    'rec_modal.varroa_dno_ok':'✅ OK:','rec_modal.varroa_dno_ok_val':'< 1 Milbe/Tag',
+    'rec_modal.varroa_dno_warn':'⚠️ Achtung:','rec_modal.varroa_dno_warn_val':'1–3 Milben/Tag',
+    'rec_modal.varroa_dno_crit':'🚨 Kritisch:','rec_modal.varroa_dno_crit_val':'> 3 Milben/Tag → Behandlung erforderlich',
+    'rec_modal.varroa_count':'Milbenanzahl','rec_modal.varroa_hours':'Beobachtungszeitraum (h)',
+    'rec_modal.varroa_method':'Methode','rec_modal.varroa_result':'Bewertung',
+    'rec_modal.plasty_title':'📐 Warum ist die Wabengradheit wichtig?',
+    'rec_modal.plasty_info':'In einer Warré-Beute bauen Bienen freie Waben an Leisten. Schiefe oder überkreuzte Waben verbinden Zargen.',
+    'rec_modal.plasty_rov':'✅ Gerade','rec_modal.plasty_rov_desc':'ideal, alles gut.',
+    'rec_modal.plasty_mirne':'↗️ Leicht schief','rec_modal.plasty_mirne_desc':'beobachten, noch kein Eingriff.',
+    'rec_modal.plasty_sikme':'⚠️ Schief','rec_modal.plasty_sikme_desc':'Verbindungsrisiko, Korrektur erwägen.',
+    'rec_modal.plasty_kriz':'🚨 Überkreuzt','rec_modal.plasty_kriz_desc':'Zargen verbunden, Eingriff nötig.',
+    'rec_modal.plasty_stav':'Wabenzustand','rec_modal.plasty_nastavek':'Zargennummer (optional)',
     'rec.matka':'Königinnenereignis',
     'rec.prevzeti':'Volkübernahme',
     'rec.default':'Eintrag',
@@ -3102,9 +3246,11 @@ function renderTower(h){
     const isTop=i===0, isBot=i===ns.length-1;
     const lbl=isTop?t('tower.top'):isBot&&ns.length>1?t('tower.bottom'):t('tower.middle');
     const cls=isTop?'top-box':isBot?'bot-box':'mid-box';
+    const frameIcon={'lišty':'🪵','plast-lišty':'🔧','rámky':'📋'}[b.frame]||'';
+    const frameLabel=b.frame?` <span style="font-size:.65rem;color:var(--dim);background:var(--bg);padding:1px 6px;border-radius:10px;margin-left:4px">${frameIcon} ${b.frame}</span>`:'';
     return`<div class="tower-box ${cls}">
       <span class="tb-num">${i+1}</span>
-      <span class="tb-label">${lbl}</span>
+      <span class="tb-label">${lbl}${frameLabel}</span>
       <span class="tb-date">${fmtDate(b.dateAdded)}</span>
     </div>`;
   }).join('');
@@ -3162,17 +3308,19 @@ async function deleteRecord(id){
 //  RECORD META
 // ════════════════════════════
 const REC={
-  cesno:   {icon:'🚪',color:'#7ab648'},
-  vaha:    {icon:'⚖️',color:'#f5a623'},
-  nadireni:{icon:'📦',color:'#e8891a'},
-  sklizen: {icon:'🍯',color:'#ffd700'},
-  krmeni:  {icon:'🍬',color:'#c8a96a'},
-  rojeni:  {icon:'✈️',color:'#e05a2b'},
-  polstar: {icon:'🧶',color:'#a07850'},
-  otoceni: {icon:'↕️',color:'#7ab648'},
-  poznamka:{icon:'📝',color:'#c8a96a'},
-  matka:   {icon:'👑',color:'#ffd700'},
-  prevzeti:{icon:'📋',color:'#7ab648'},
+  cesno:    {icon:'🚪',color:'#7ab648'},
+  vaha:     {icon:'⚖️',color:'#f5a623'},
+  nadireni: {icon:'📦',color:'#e8891a'},
+  sklizen:  {icon:'🍯',color:'#ffd700'},
+  krmeni:   {icon:'🍬',color:'#c8a96a'},
+  rojeni:   {icon:'✈️',color:'#e05a2b'},
+  polstar:  {icon:'🧶',color:'#a07850'},
+  otoceni:  {icon:'↕️',color:'#7ab648'},
+  poznamka: {icon:'📝',color:'#c8a96a'},
+  matka:    {icon:'👑',color:'#ffd700'},
+  prevzeti: {icon:'📋',color:'#7ab648'},
+  varroaDno:{icon:'🔬',color:'#e05a2b'},
+  plasty:   {icon:'📐',color:'#7ab648'},
 };
 function recMeta(r){ const m=REC[r.type]; return m?{icon:m.icon,label:t('rec.'+r.type),color:m.color}:{icon:'📋',label:t('rec.default'),color:'var(--dim)'}; }
 
@@ -3203,6 +3351,19 @@ function recSummary(r){
         d.varroaDatum&&`${t('sum.varroa_treated')}${fmtDate(d.varroaDatum)}${d.varroaCim?' – '+d.varroaCim:''}`,
         d.breeder&&`${t('sum.from')}${d.breeder}`].filter(Boolean);
       return parts.join(' · ');
+    }
+    case'varroaDno':{
+      const n=d.pocet!=null?d.pocet:'?';
+      const h=d.hodiny||24;
+      const perDay=d.hodiny&&d.pocet!=null?Math.round(d.pocet/h*24*10)/10:null;
+      const metoda=d.metoda||'';
+      const vysledek=d.vysledek?`· ${d.vysledek}`:'';
+      return[`${n} roztočů / ${h}h`,perDay!=null?`(${perDay}/den)`:'',metoda,vysledek].filter(Boolean).join(' ');
+    }
+    case'plasty':{
+      const stav=d.stav||'';
+      const ns=d.nastavek?` · nástavek ${d.nastavek}`:'';
+      return stav+ns;
     }
     default: return'';
   }
@@ -3251,11 +3412,13 @@ async function saveRecord(){
     case'cesno':  d2={aktivita:recFields.aktivita||null,pyl:recFields.pyl||null,vousy:recFields.vousy||'ne'}; break;
     case'vaha':   d2={kg:document.getElementById('recKg').value||null}; if(!d2.kg){alert(t('alert.weight_required'));return;} break;
     case'nadireni':{
-      const n=parseInt(document.getElementById('recNadirPocet').value)||1; d2={pocet:n};
+      const n=parseInt(document.getElementById('recNadirPocet').value)||1;
+      const frame=recFields.nadirFrame||'lišty';
+      d2={pocet:n,frame};
       const h=_state.hives.find(x=>x.id===hiveId);
       if(h){
         const newNastavky=[...(h.nastavky||[])];
-        for(let i=0;i<n;i++) newNastavky.push({id:uid(),dateAdded:date});
+        for(let i=0;i<n;i++) newNastavky.push({id:uid(),dateAdded:date,frame});
         hiveUpdate={nastavky:newNastavky};
         h.nastavky=newNastavky; // optimistic local update
       }
@@ -3275,6 +3438,24 @@ async function saveRecord(){
     case'rojeni': d2={typ:recFields.rojTyp||null,kam:document.getElementById('recRojKam').value.trim()}; break;
     case'polstar':d2={stav:document.getElementById('recPolstar').value}; break;
     case'otoceni':d2={smer:recFields.otSmer||null}; break;
+    case'varroaDno':{
+      const cnt=document.getElementById('recVarroaCount').value;
+      d2={
+        pocet:cnt!==''?parseInt(cnt):null,
+        hodiny:parseInt(document.getElementById('recVarroaHours').value)||24,
+        metoda:recFields.varroaMetoda||'přirozený spad',
+        vysledek:recFields.varroaVysledek||null,
+      };
+      break;
+    }
+    case'plasty':{
+      d2={
+        stav:recFields.plastyStav||null,
+        nastavek:document.getElementById('recPlastyNastavek').value.trim()||null,
+      };
+      if(!d2.stav){alert('Vyber stav plástů.');return;}
+      break;
+    }
     case'matka':{
       const rok=parseInt(document.getElementById('recQueenYear').value)||null;
       const isKoupena=recFields.mUdalost==='koupena';
