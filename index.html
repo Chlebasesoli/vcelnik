@@ -219,100 +219,67 @@
     .empty p{font-size:.85rem}
 
     /* ── Login screen ── */
-    #loginScreen{position:fixed;inset:0;z-index:1000;display:flex;flex-direction:column;
-                 align-items:center;justify-content:flex-end;overflow:hidden}
+    #loginScreen{position:fixed;inset:0;background:var(--bg);z-index:1000;display:flex;flex-direction:column;
+                 align-items:center;justify-content:center;padding:24px;gap:20px}
     #loginScreen.hidden{display:none}
-    #loginBg{position:absolute;inset:0;background:url('login-bg.jpg') center 40%/cover no-repeat;
-             transform:scale(1.04);filter:brightness(.82)}
-    #loginBg::after{content:'';position:absolute;inset:0;
-                    background:linear-gradient(to bottom,
-                      rgba(10,6,2,.08) 0%,
-                      rgba(10,6,2,.15) 35%,
-                      rgba(10,6,2,.72) 62%,
-                      rgba(10,6,2,.97) 100%)}
-    #loginTop{position:absolute;top:0;left:0;right:0;display:flex;flex-direction:column;
-              align-items:center;padding-top:clamp(48px,11vh,90px);gap:6px;z-index:1}
-    .login-logo{font-size:3.2rem;line-height:1;filter:drop-shadow(0 2px 8px rgba(0,0,0,.5))}
-    .login-title{font-size:2rem;font-weight:800;color:#fff;letter-spacing:.5px;
-                 text-shadow:0 2px 12px rgba(0,0,0,.6)}
-    .login-sub{font-size:.88rem;color:rgba(255,220,130,.85);text-shadow:0 1px 6px rgba(0,0,0,.5)}
-    #loginBottom{position:relative;z-index:1;width:100%;padding:0 20px 0;
-                 display:flex;flex-direction:column;align-items:center;gap:0}
-    .login-card{background:rgba(26,14,4,.72);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
-                border:1px solid rgba(245,166,35,.18);border-radius:22px 22px 0 0;
-                padding:24px 22px 12px;width:100%;max-width:420px;
+    .login-logo{font-size:3.5rem;line-height:1}
+    .login-title{font-size:1.6rem;font-weight:800;color:var(--amber);text-align:center}
+    .login-sub{font-size:.85rem;color:var(--dim);text-align:center;margin-top:-10px}
+    .login-card{background:var(--surface);border-radius:var(--r);padding:24px;width:100%;max-width:380px;
                 display:flex;flex-direction:column;gap:14px}
-    .login-tabs{display:flex;gap:6px;background:rgba(255,255,255,.08);border-radius:10px;padding:4px}
-    .login-tab{flex:1;padding:9px;border:none;border-radius:8px;cursor:pointer;font-weight:700;
-               font-size:.85rem;background:none;color:rgba(255,255,255,.5);transition:all .15s}
+    .login-tabs{display:flex;gap:6px;background:var(--s2);border-radius:10px;padding:4px}
+    .login-tab{flex:1;padding:8px;border:none;border-radius:8px;cursor:pointer;font-weight:700;
+               font-size:.85rem;background:none;color:var(--dim);transition:all .15s}
     .login-tab.active{background:var(--amber);color:#1a1008}
-    .login-input{width:100%;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.15);
-                 border-radius:12px;padding:13px 16px;color:#fff;font-size:.97rem;outline:none;
-                 transition:border-color .15s;-webkit-appearance:none}
-    .login-input::placeholder{color:rgba(255,255,255,.4)}
-    .login-input:focus{border-color:var(--amber);background:rgba(255,255,255,.14)}
-    .login-btn{width:100%;padding:14px;background:var(--amber);color:#1a1008;border:none;border-radius:12px;
-               font-size:1rem;font-weight:800;cursor:pointer;transition:filter .15s;
-               box-shadow:0 4px 16px rgba(245,166,35,.35)}
+    .login-input{width:100%;background:var(--s2);border:1px solid var(--s3);border-radius:10px;
+                 padding:11px 14px;color:var(--text);font-size:.95rem;outline:none;transition:border-color .15s}
+    .login-input:focus{border-color:var(--amber)}
+    .login-btn{width:100%;padding:13px;background:var(--amber);color:#1a1008;border:none;border-radius:10px;
+               font-size:1rem;font-weight:800;cursor:pointer;transition:filter .15s}
     .login-btn:active{filter:brightness(.85)}
     .login-btn:disabled{filter:brightness(.5);cursor:default}
-    .login-err{font-size:.82rem;color:#ff8a6a;text-align:center;min-height:18px}
+    .login-err{font-size:.82rem;color:var(--danger);text-align:center;min-height:18px}
     .login-ok{font-size:.82rem;color:var(--ok);text-align:center;min-height:18px}
-    #loginFooterBar{width:100%;max-width:420px;background:rgba(26,14,4,.72);
-                    backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
-                    border-top:1px solid rgba(245,166,35,.1);
-                    padding:10px 22px max(16px,env(safe-area-inset-bottom));text-align:center}
   </style>
 </head>
 <body>
 
 <!-- ══ LOGIN SCREEN ══ -->
 <div id="loginScreen">
-  <div id="loginBg"></div>
-
-  <!-- Top: logo + title over photo -->
-  <div id="loginTop">
-    <div class="login-logo">🐝</div>
-    <div class="login-title">Včelník</div>
-    <div class="login-sub" data-i18n="login.subtitle">Správa včelstev Warré</div>
+  <div style="position:absolute;top:16px;right:16px;display:flex;gap:6px">
+    <button class="tog-btn active" data-lang-btn="cs" onclick="setLanguage('cs')" style="font-size:.8rem;padding:4px 10px">🇨🇿</button>
+    <button class="tog-btn" data-lang-btn="en" onclick="setLanguage('en')" style="font-size:.8rem;padding:4px 10px">🇬🇧</button>
+    <button class="tog-btn" data-lang-btn="de" onclick="setLanguage('de')" style="font-size:.8rem;padding:4px 10px">🇩🇪</button>
   </div>
-
-  <!-- Language switcher -->
-  <div style="position:absolute;top:16px;right:16px;display:flex;gap:6px;z-index:2">
-    <button class="tog-btn active" data-lang-btn="cs" onclick="setLanguage('cs')" style="font-size:.8rem;padding:4px 10px;background:rgba(0,0,0,.35);border-color:rgba(255,255,255,.2)">🇨🇿</button>
-    <button class="tog-btn" data-lang-btn="en" onclick="setLanguage('en')" style="font-size:.8rem;padding:4px 10px;background:rgba(0,0,0,.35);border-color:rgba(255,255,255,.2)">🇬🇧</button>
-    <button class="tog-btn" data-lang-btn="de" onclick="setLanguage('de')" style="font-size:.8rem;padding:4px 10px;background:rgba(0,0,0,.35);border-color:rgba(255,255,255,.2)">🇩🇪</button>
-  </div>
-
-  <!-- Bottom: glassmorphism card -->
-  <div id="loginBottom">
-    <div class="login-card">
-      <div class="login-tabs">
-        <button class="login-tab active" id="tabLogin" onclick="switchAuthTab('login')" data-i18n="login.tab_login">Přihlásit se</button>
-        <button class="login-tab" id="tabRegister" onclick="switchAuthTab('register')" data-i18n="login.tab_register">Registrovat</button>
-      </div>
-      <div id="authFormLogin">
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <input class="login-input" id="loginEmail" type="email" placeholder="E-mail" autocomplete="email" data-i18n="login.email" data-i18n-attr="placeholder"/>
-          <input class="login-input" id="loginPassword" type="password" placeholder="Heslo" autocomplete="current-password" data-i18n="login.password" data-i18n-attr="placeholder"/>
-          <div class="login-err" id="loginErr"></div>
-          <button class="login-btn" id="loginBtn" onclick="doLogin()" data-i18n="login.tab_login">Přihlásit se</button>
-        </div>
-      </div>
-      <div id="authFormRegister" style="display:none">
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <input class="login-input" id="regEmail" type="email" placeholder="E-mail" autocomplete="email" data-i18n="login.email" data-i18n-attr="placeholder"/>
-          <input class="login-input" id="regPassword" type="password" placeholder="Heslo (min. 6 znaků)" autocomplete="new-password" data-i18n="login.password_new" data-i18n-attr="placeholder"/>
-          <input class="login-input" id="regPassword2" type="password" placeholder="Heslo znovu" autocomplete="new-password" data-i18n="login.password_confirm" data-i18n-attr="placeholder"/>
-          <div class="login-err" id="regErr"></div>
-          <div class="login-ok" id="regOk"></div>
-          <button class="login-btn" id="regBtn" onclick="doRegister()" data-i18n="login.btn_register">Vytvořit účet</button>
-        </div>
+  <div class="login-logo">🐝</div>
+  <div class="login-title">Včelník</div>
+  <div class="login-sub" data-i18n="login.subtitle">Správa včelstev Warré</div>
+  <div class="login-card">
+    <div class="login-tabs">
+      <button class="login-tab active" id="tabLogin" onclick="switchAuthTab('login')" data-i18n="login.tab_login">Přihlásit se</button>
+      <button class="login-tab" id="tabRegister" onclick="switchAuthTab('register')" data-i18n="login.tab_register">Registrovat</button>
+    </div>
+    <div id="authFormLogin">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <input class="login-input" id="loginEmail" type="email" placeholder="E-mail" autocomplete="email" data-i18n="login.email" data-i18n-attr="placeholder"/>
+        <input class="login-input" id="loginPassword" type="password" placeholder="Heslo" autocomplete="current-password" data-i18n="login.password" data-i18n-attr="placeholder"/>
+        <div class="login-err" id="loginErr"></div>
+        <button class="login-btn" id="loginBtn" onclick="doLogin()" data-i18n="login.tab_login">Přihlásit se</button>
       </div>
     </div>
-    <div id="loginFooterBar">
-      <p style="font-size:.68rem;color:rgba(200,169,106,.7);line-height:1.5;margin:0" data-i18n="login.footer"></p>
+    <div id="authFormRegister" style="display:none">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <input class="login-input" id="regEmail" type="email" placeholder="E-mail" autocomplete="email" data-i18n="login.email" data-i18n-attr="placeholder"/>
+        <input class="login-input" id="regPassword" type="password" placeholder="Heslo (min. 6 znaků)" autocomplete="new-password" data-i18n="login.password_new" data-i18n-attr="placeholder"/>
+        <input class="login-input" id="regPassword2" type="password" placeholder="Heslo znovu" autocomplete="new-password" data-i18n="login.password_confirm" data-i18n-attr="placeholder"/>
+        <div class="login-err" id="regErr"></div>
+        <div class="login-ok" id="regOk"></div>
+        <button class="login-btn" id="regBtn" onclick="doRegister()" data-i18n="login.btn_register">Vytvořit účet</button>
+      </div>
     </div>
+  </div>
+  <div style="position:absolute;bottom:20px;left:0;right:0;text-align:center;padding:0 24px">
+    <p style="font-size:.72rem;color:var(--dim);line-height:1.6;max-width:280px;margin:0 auto" data-i18n="login.footer"></p>
   </div>
 </div>
 
