@@ -2304,6 +2304,45 @@ function getData(){ return _state; }
 // Alias 'data' to _state so all existing render code keeps working
 Object.defineProperty(window,'data',{get:()=>_state});
 
+// Direct REST helpers – bypass supabase-js to avoid Prefer/Accept headers that
+// trigger extra CORS preflights. Includes retry with AbortController so that
+// if a CORS preflight hangs (known issue on some networks), we abort + retry.
+async function _doFetch(url, opts, retries=2){
+  for(let i=0; i<=retries; i++){
+    const ctrl = new AbortController();
+    const tid = setTimeout(()=>ctrl.abort(), 8000);
+    try{
+      const r = await fetch(url, {...opts, signal:ctrl.signal});
+      clearTimeout(tid);
+      return r;
+    }catch(e){
+      clearTimeout(tid);
+      if(i===retries) throw new Error('Připojení selhalo – zkontroluj internet ('+(e.message||e)+')');
+      await new Promise(r=>setTimeout(r, 300));
+    }
+  }
+}
+async function _getToken(){
+  const {data:{session}} = await supa.auth.getSession();
+  return session?.access_token || SUPA_KEY;
+}
+async function _restPost(table, body){
+  const r = await _doFetch(`${SUPA_URL}/rest/v1/${table}`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+await _getToken()},
+    body: JSON.stringify(body),
+  });
+  if(!r.ok){ const e=await r.json().catch(()=>({message:'HTTP '+r.status})); throw new Error(e.message||'HTTP '+r.status); }
+}
+async function _restPatch(table, filter, body){
+  const r = await _doFetch(`${SUPA_URL}/rest/v1/${table}?${filter}`, {
+    method:'PATCH',
+    headers:{'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+await _getToken()},
+    body: JSON.stringify(body),
+  });
+  if(!r.ok){ const e=await r.json().catch(()=>({message:'HTTP '+r.status})); throw new Error(e.message||'HTTP '+r.status); }
+}
+
 async function loadAllData(){
   const [hivesRes, recordsRes, tasksRes, stanRes] = await Promise.all([
     supa.from('hives').select('*').is('deleted_at', null).order('created_at'),
@@ -2315,26 +2354,29 @@ async function loadAllData(){
     hives: (hivesRes.data||[]).map(h => ({...h, stanId: h.stan_id})),
     records: (recordsRes.data||[]).map(r => ({...r, hiveId: r.hive_id})),
     tasks: (tasksRes.data||[]).map(tk => ({...tk, text: tk.title, due: tk.due_date, hiveId: tk.hive_id,
-      // tasks use 'title' in DB but 'title' in app too, so keep title; add date alias
       date: tk.due_date})),
     stanoviste: stanRes.data||[],
   };
-  // Load profile
-  const {data: profData} = await supa.from('profiles').select('*').eq('id', currentUser.id).single();
-  if(profData){
-    profile = {
-      _typ: profData.typ||'osoba',
-      firma: profData.firma||'',
-      jmeno: profData.jmeno||'',
-      prijmeni: profData.prijmeni||'',
-      regCislo: profData.reg_cislo||'',
-      rodCislo: profData.rod_cislo||'',
-      adresa: profData.adresa||'',
-      telefon: profData.telefon||'',
-      email: profData.email||'',
-      ico: profData.ico||'',
-    };
-  }
+  // Load profile separately – uses .limit(1) instead of .single() to avoid
+  // triggering a separate CORS preflight with Accept: application/vnd.pgrst.object+json
+  try{
+    const {data: rows} = await supa.from('profiles').select('*').eq('id', currentUser.id).limit(1);
+    const profData = rows?.[0];
+    if(profData){
+      profile = {
+        _typ: profData.typ||'osoba',
+        firma: profData.firma||'',
+        jmeno: profData.jmeno||'',
+        prijmeni: profData.prijmeni||'',
+        regCislo: profData.reg_cislo||'',
+        rodCislo: profData.rod_cislo||'',
+        adresa: profData.adresa||'',
+        telefon: profData.telefon||'',
+        email: profData.email||'',
+        ico: profData.ico||'',
+      };
+    }
+  }catch(_){}
 }
 
 // Dummy save() – no-op since we now save per-operation to Supabase.
@@ -2690,28 +2732,27 @@ async function saveHive(){
   };
   if(editHiveId){
     const stanId=document.getElementById('hiveStanId').value||null;
-    sb(await _supaTimeout(supa.from('hives').update({
+    await _restPatch('hives','id=eq.'+editHiveId,{
       name, type:document.getElementById('hiveType').value,
       status:document.getElementById('hiveStatus').value,
       stan_id:stanId,
       note:document.getElementById('hiveNote').value.trim(),
       origin, queen,
       updated_at:new Date().toISOString(),
-    }).eq('id',editHiveId)));
+    });
   } else {
     const n=parseInt(document.getElementById('hiveInitBoxes').value)||0;
     const nastavky=Array.from({length:n},()=>({id:uid(),dateAdded:today()}));
     const newHiveId=uid();
     const stanId=document.getElementById('hiveStanId').value||null;
-    const insRes = await _supaTimeout(supa.from('hives').insert({
+    await _restPost('hives',{
       id:newHiveId, user_id:currentUser.id,
       name, type:document.getElementById('hiveType').value,
       status:document.getElementById('hiveStatus').value,
       stan_id:stanId,
       note:document.getElementById('hiveNote').value.trim(),
       nastavky, origin, queen,
-    }));
-    sb(insRes);
+    });
 
     // ── Automatický první záznam „Převzetí" pro od chovatele / koupeno
     if(currentOrigin==='chovatel'||currentOrigin==='koupeno'){
@@ -2727,14 +2768,14 @@ async function saveHive(){
         varDatum&&`${t('prev.varroa')}${fmtDate(varDatum)}${varCim?' – '+varCim:''}`,
         pozn&&`${t('prev.note')}${pozn}`,
       ].filter(Boolean).join('\n');
-      sb(await supa.from('records').insert({
+      await _restPost('records',{
         id:uid(), user_id:currentUser.id, hive_id:newHiveId,
         date:origin?.date||today(),
         type:'prevzeti',
         data:{sila:_prevSila,zdravList:_prevZdrav,varroaDatum:varDatum||null,varroaCim:varCim||null,
               breeder:breeder||null,contact:contact||null},
         notes:noteParts,
-      }));
+      });
     }
   }
   await loadAllData();
@@ -2756,8 +2797,8 @@ async function deleteCurrentHive(){
   if(!confirm(t('confirm.delete_hive',{name:h.name}))) return;
   const now=new Date().toISOString();
   await Promise.all([
-    supa.from('hives').update({deleted_at:now}).eq('id',currentHiveId),
-    supa.from('records').update({deleted_at:now}).eq('hive_id',currentHiveId),
+    _restPatch('hives','id=eq.'+currentHiveId,{deleted_at:now}),
+    _restPatch('records','hive_id=eq.'+currentHiveId,{deleted_at:now}),
   ]);
   await loadAllData();
   showView('uly');
@@ -2897,7 +2938,7 @@ function renderTimeline(recs){
 
 async function deleteRecord(id){
   if(!confirm(t('confirm.delete_record'))) return;
-  await supa.from('records').update({deleted_at:new Date().toISOString()}).eq('id',id);
+  await _restPatch('records','id=eq.'+id,{deleted_at:new Date().toISOString()});
   await loadAllData();
   renderDetail();
 }
@@ -3051,15 +3092,12 @@ async function saveRecord(){
     }
   }
   try{
-    const results=await Promise.all([
-      supa.from('records').insert({
-        id:uid(), user_id:currentUser.id, hive_id:hiveId,
-        date, type:recType, data:d2,
-        notes:document.getElementById('recNotes').value.trim(),
-      }),
-      ...(hiveUpdate?[supa.from('hives').update({...hiveUpdate, updated_at:new Date().toISOString()}).eq('id',hiveId)]:[]),
-    ]);
-    results.forEach(r=>sb(r));
+    await _restPost('records',{
+      id:uid(), user_id:currentUser.id, hive_id:hiveId,
+      date, type:recType, data:d2,
+      notes:document.getElementById('recNotes').value.trim(),
+    });
+    if(hiveUpdate) await _restPatch('hives','id=eq.'+hiveId,{...hiveUpdate, updated_at:new Date().toISOString()});
     await loadAllData();
     closeModal('recordModal');
     if(currentView==='detail') renderDetail(); else renderDash();
@@ -3089,9 +3127,9 @@ async function saveStan(){
     gps:document.getElementById('stanGps').value.trim(),note:document.getElementById('stanNote').value.trim()};
   try{
     if(editStanId){
-      sb(await supa.from('stanoviste').update({...obj, updated_at:new Date().toISOString()}).eq('id',editStanId));
+      await _restPatch('stanoviste','id=eq.'+editStanId,{...obj, updated_at:new Date().toISOString()});
     } else {
-      sb(await supa.from('stanoviste').insert({id:uid(), user_id:currentUser.id, ...obj}));
+      await _restPost('stanoviste',{id:uid(), user_id:currentUser.id, ...obj});
     }
     await loadAllData();
     closeModal('stanModal'); renderStan();
@@ -3120,9 +3158,9 @@ async function deleteStan(id){
   const now=new Date().toISOString();
   // soft-delete the stanoviste and unlink hives
   const hivesToUnlink=_state.hives.filter(h=>h.stanId===id);
-  const ops=[supa.from('stanoviste').update({deleted_at:now}).eq('id',id)];
+  const ops=[_restPatch('stanoviste','id=eq.'+id,{deleted_at:now})];
   for(const h of hivesToUnlink){
-    ops.push(supa.from('hives').update({stan_id:null, updated_at:now}).eq('id',h.id));
+    ops.push(_restPatch('hives','id=eq.'+h.id,{stan_id:null, updated_at:now}));
   }
   await Promise.all(ops);
   await loadAllData();
@@ -3145,10 +3183,10 @@ async function saveTask(){
   const hiveId=document.getElementById('taskHive').value||null;
   const dueDate=document.getElementById('taskDate').value||null;
   try{
-    sb(await supa.from('tasks').insert({
+    await _restPost('tasks',{
       id:uid(), user_id:currentUser.id,
       title, hive_id:hiveId, due_date:dueDate, done:false,
-    }));
+    });
     await loadAllData();
     closeModal('taskModal'); renderTasks();
   }catch(e){alert('❌ Chyba při ukládání úkolu:\n'+e.message);console.error(e);}
@@ -3170,12 +3208,12 @@ function renderTasks(){
 async function toggleTask(id){
   const tk=_state.tasks.find(x=>x.id===id);
   const newDone=!tk.done;
-  await supa.from('tasks').update({done:newDone, done_at:newDone?new Date().toISOString():null}).eq('id',id);
+  await _restPatch('tasks','id=eq.'+id,{done:newDone, done_at:newDone?new Date().toISOString():null});
   await loadAllData();
   renderTasks();
 }
 async function deleteTask(id){
-  await supa.from('tasks').update({deleted_at:new Date().toISOString()}).eq('id',id);
+  await _restPatch('tasks','id=eq.'+id,{deleted_at:new Date().toISOString()});
   await loadAllData();
   renderTasks();
 }
@@ -3200,19 +3238,13 @@ async function saveProfile(){
     email:document.getElementById('profEmail').value.trim()};
   // Persist to Supabase profiles table
   if(currentUser){
-    await supa.from('profiles').upsert({
-      id: currentUser.id,
-      typ: profile._typ||'osoba',
-      firma: profile.firma||null,
-      jmeno: profile.jmeno||null,
-      prijmeni: profile.prijmeni||null,
-      reg_cislo: profile.regCislo||null,
-      rod_cislo: profile.rodCislo||null,
-      adresa: profile.adresa||null,
-      telefon: profile.telefon||null,
-      email: profile.email||null,
-      updated_at: new Date().toISOString(),
-    });
+    const profBody={id:currentUser.id,typ:profile._typ||'osoba',firma:profile.firma||null,
+      jmeno:profile.jmeno||null,prijmeni:profile.prijmeni||null,reg_cislo:profile.regCislo||null,
+      rod_cislo:profile.rodCislo||null,adresa:profile.adresa||null,telefon:profile.telefon||null,
+      email:profile.email||null,updated_at:new Date().toISOString()};
+    // Try PATCH first, fallback to POST if row doesn't exist
+    try{ await _restPatch('profiles','id=eq.'+currentUser.id,profBody); }
+    catch(_){ await _restPost('profiles',profBody).catch(()=>{}); }
   }
   updateProfileBtn(); closeModal('profileModal');
 }
@@ -3495,26 +3527,23 @@ async function migrateLocalStorage(){
   }catch(e){ alert('❌ Chyba při migraci: '+e.message); }
 }
 
+let _lastLoadedUserId = null;
 supa.auth.onAuthStateChange(async (_event, session) => {
   if(session?.user){
+    const uid = session.user.id;
     showApp(session.user);
-    try{
-      await Promise.race([
-        loadAllData(),
-        new Promise((_,rej)=>setTimeout(()=>rej(new Error('REST API nedostupné – zkus incognito nebo jiný prohlížeč')),12000))
-      ]);
-    }catch(e){
-      console.error('loadAllData failed:', e);
-      const b=document.createElement('div');
-      b.style='position:fixed;top:0;left:0;right:0;background:#c0392b;color:#fff;padding:10px 16px;z-index:9999;font-size:.9rem;text-align:center';
-      b.textContent='⚠️ '+e.message;
-      document.body.appendChild(b);
+    // Prevent duplicate loads when onAuthStateChange fires multiple times
+    // (INITIAL_SESSION + SIGNED_IN both fire on login)
+    if(uid !== _lastLoadedUserId){
+      _lastLoadedUserId = uid;
+      await loadAllData().catch(e => console.error('loadAllData error:', e));
+      await migrateLocalStorage();
     }
-    await migrateLocalStorage();
     updateProfileBtn();
     applyTranslations();
     renderDash();
   } else {
+    _lastLoadedUserId = null;
     showLogin();
   }
 });
