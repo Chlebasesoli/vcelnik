@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Mockup – fotky</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#1a0f00;color:#e8d5a0;font-family:-apple-system,sans-serif;padding:16px;max-width:420px;margin:0 auto}
+.gold{color:#f5a623}
+h2{font-size:.7rem;letter-spacing:.1em;color:#f5a623;text-transform:uppercase;margin:20px 0 10px}
+
+/* Hive card */
+.hive-card{background:#2d1f0e;border-radius:14px;overflow:hidden;margin-bottom:12px;cursor:pointer;transition:transform .15s}
+.hive-card:active{transform:scale(.98)}
+.hive-photo{width:100%;height:140px;object-fit:cover;display:block;background:#1a0f00}
+.hive-photo-placeholder{width:100%;height:140px;background:#1a0f00;display:flex;align-items:center;justify-content:center;color:#555;font-size:2rem}
+.hive-body{padding:12px}
+.hive-name{font-weight:700;font-size:1rem;margin-bottom:4px}
+.hive-loc{font-size:.8rem;color:#a07840;margin-bottom:6px}
+.badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.badge{font-size:.7rem;padding:2px 8px;border-radius:20px;background:#3d2a10}
+.badge.ok{color:#7ab648;border:1px solid #7ab648}
+.badge.info{color:#e8d5a0;border:1px solid #5a3e1e}
+.hive-last{font-size:.75rem;color:#7a5a30;margin-top:4px}
+
+/* Stanoviště card */
+.stan-card{background:#2d1f0e;border-radius:14px;overflow:hidden;margin-bottom:12px;cursor:pointer}
+.stan-photo{width:100%;height:110px;object-fit:cover;display:block}
+.stan-photo-placeholder{width:100%;height:110px;background:#1a0f00;display:flex;align-items:center;justify-content:center;color:#555;font-size:1.8rem}
+.stan-body{padding:12px;display:flex;align-items:center;justify-content:space-between}
+.stan-name{font-weight:700;font-size:.95rem}
+.stan-sub{font-size:.78rem;color:#a07840;margin-top:2px}
+.stan-num{font-size:.7rem;color:#f5a623;background:#1a0f00;padding:3px 9px;border-radius:20px}
+
+/* Detail view */
+.detail-photo{width:100%;height:200px;object-fit:cover;border-radius:14px;margin-bottom:12px;display:block}
+.detail-photo-placeholder{width:100%;height:200px;border-radius:14px;background:#2d1f0e;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#555;cursor:pointer;border:2px dashed #3d2a10;margin-bottom:12px}
+.detail-photo-placeholder:hover{border-color:#f5a623;color:#f5a623}
+.detail-hdr{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.back{background:#2d1f0e;border:none;color:#e8d5a0;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:.9rem}
+
+/* Form upload */
+.modal{background:#2d1f0e;border-radius:16px;padding:16px;margin-bottom:16px}
+.modal h3{color:#f5a623;font-size:1rem;margin-bottom:12px}
+.photo-upload-box{width:100%;height:130px;border:2px dashed #5a3e1e;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;color:#a07840;font-size:.85rem;transition:all .2s;position:relative;overflow:hidden}
+.photo-upload-box:hover{border-color:#f5a623;color:#f5a623}
+.photo-upload-box img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;border-radius:10px}
+.photo-upload-box .overlay{position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;opacity:0;transition:opacity .2s;border-radius:10px}
+.photo-upload-box:hover .overlay{opacity:1}
+.fg{margin-bottom:10px}
+.fg label{font-size:.78rem;color:#f5a623;display:block;margin-bottom:4px}
+.input{width:100%;background:#1a0f00;border:1px solid #5a3e1e;border-radius:8px;padding:8px 12px;color:#e8d5a0;font-size:.9rem}
+
+/* Sample photo simulation */
+.photo-sim-hive{background:linear-gradient(135deg,#5a3e1e 0%,#8b6340 40%,#3d2a10 100%);display:flex;align-items:center;justify-content:center;font-size:3rem}
+.photo-sim-stan{background:linear-gradient(135deg,#2d5a1e 0%,#4a8b40 40%,#1a3d10 100%);display:flex;align-items:center;justify-content:center;font-size:3rem}
+
+.section-label{font-size:.65rem;color:#a07840;letter-spacing:.08em;text-transform:uppercase;margin:24px 0 8px;display:flex;align-items:center;gap:8px}
+.section-label::after{content:'';flex:1;height:1px;background:#3d2a10}
+</style>
+</head>
+<body>
+
+<div style="text-align:center;padding:12px 0 4px">
+  <div style="font-size:1.3rem;font-weight:800;color:#f5a623">🐝 Včelník – náhled fotek</div>
+  <div style="font-size:.75rem;color:#a07840;margin-top:2px">Jak by to vypadalo</div>
+</div>
+
+<!-- ── 1. Karta úlu S fotkou ── -->
+<div class="section-label">Karta úlu – s fotkou</div>
+<div class="hive-card">
+  <div class="hive-photo photo-sim-hive">🏚️</div>
+  <div class="hive-body">
+    <div class="hive-name">🏚️ Warre 1</div>
+    <div class="hive-loc">📍 Kroha</div>
+    <div class="badges">
+      <span class="badge ok">aktivní</span>
+      <span class="badge info">Warré</span>
+      <span class="badge info">📦 2</span>
+    </div>
+    <div class="hive-last">Záznam dnes</div>
+  </div>
+</div>
+
+<!-- ── 2. Karta úlu BEZ fotky ── -->
+<div class="section-label">Karta úlu – bez fotky (placeholder)</div>
+<div class="hive-card">
+  <div class="hive-photo" style="background:#1e1206;display:flex;align-items:center;justify-content:center">
+    <svg width="110" height="120" viewBox="0 0 110 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Střecha -->
+      <polygon points="55,4 98,32 12,32" fill="#8b5e2a" stroke="#c4873e" stroke-width="1.5" stroke-linejoin="round"/>
+      <polygon points="55,4 98,32 55,26" fill="#6b4318"/>
+      <!-- Nástavek 1 -->
+      <rect x="18" y="32" width="74" height="22" rx="2" fill="#7a4e20" stroke="#c4873e" stroke-width="1.2"/>
+      <line x1="18" y1="43" x2="92" y2="43" stroke="#5a3810" stroke-width="1"/>
+      <!-- Nástavek 2 -->
+      <rect x="18" y="54" width="74" height="22" rx="2" fill="#6b4318" stroke="#c4873e" stroke-width="1.2"/>
+      <line x1="18" y1="65" x2="92" y2="65" stroke="#4a2c0e" stroke-width="1"/>
+      <!-- Nástavek 3 -->
+      <rect x="18" y="76" width="74" height="22" rx="2" fill="#5c3812" stroke="#c4873e" stroke-width="1.2"/>
+      <!-- Česno (vstupní otvor) -->
+      <rect x="36" y="94" width="38" height="5" rx="1" fill="#1a0f00" stroke="#c4873e" stroke-width="1"/>
+      <!-- Podnožka -->
+      <rect x="12" y="98" width="86" height="7" rx="3" fill="#4a2c0e" stroke="#c4873e" stroke-width="1.2"/>
+      <!-- Nožičky -->
+      <rect x="20" y="105" width="8" height="10" rx="2" fill="#3a2008"/>
+      <rect x="82" y="105" width="8" height="10" rx="2" fill="#3a2008"/>
+      <!-- Včelky -->
+      <ellipse cx="22" cy="22" rx="4" ry="2.5" fill="#f5c842" opacity=".85"/>
+      <ellipse cx="22" cy="22" rx="2.5" ry="2.5" fill="#2a1a00" opacity=".5"/>
+      <line x1="20" y1="19.5" x2="18" y2="17" stroke="#e8d5a0" stroke-width="1" opacity=".7"/>
+      <line x1="24" y1="19.5" x2="26" y2="17" stroke="#e8d5a0" stroke-width="1" opacity=".7"/>
+      <ellipse cx="88" cy="48" rx="4" ry="2.5" fill="#f5c842" opacity=".75"/>
+      <ellipse cx="88" cy="48" rx="2.5" ry="2.5" fill="#2a1a00" opacity=".5"/>
+      <line x1="86" y1="45.5" x2="84" y2="43" stroke="#e8d5a0" stroke-width="1" opacity=".7"/>
+      <line x1="90" y1="45.5" x2="92" y2="43" stroke="#e8d5a0" stroke-width="1" opacity=".7"/>
+    </svg>
+  </div>
+  <div class="hive-body">
+    <div class="hive-name">🏚️ Warre 2</div>
+    <div class="hive-loc">📍 Kroha</div>
+    <div class="badges">
+      <span class="badge ok">aktivní</span>
+      <span class="badge info">Warré</span>
+    </div>
+    <div class="hive-last">Žádný záznam</div>
+  </div>
+</div>
+
+<!-- ── 3. Detail úlu ── -->
+<div class="section-label">Detail úlu – fotka nahoře</div>
+<div style="background:#2d1f0e;border-radius:14px;padding:12px;margin-bottom:12px">
+  <div class="detail-hdr">
+    <button class="back">←</button>
+    <div>
+      <div style="font-weight:700">Warre 1</div>
+      <div style="font-size:.75rem;color:#a07840">aktivní · Warré · 📍 Kroha</div>
+    </div>
+  </div>
+  <div class="detail-photo photo-sim-hive" style="height:200px;border-radius:12px;margin-bottom:12px;font-size:4rem"></div>
+  <div style="font-size:.75rem;color:#a07840;text-align:center;margin-bottom:10px">📷 Klepni pro změnu fotky</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <div style="background:#1a0f00;border-radius:10px;padding:10px;text-align:center">
+      <div style="font-size:1.4rem;font-weight:700">12</div>
+      <div style="font-size:.7rem;color:#a07840">dní od záznamu</div>
+    </div>
+    <div style="background:#1a0f00;border-radius:10px;padding:10px;text-align:center">
+      <div style="font-size:1.4rem;font-weight:700">2</div>
+      <div style="font-size:.7rem;color:#a07840">nástavky</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── 4. Stanoviště s fotkou ── -->
+<div class="section-label">Stanoviště – bez fotky (placeholder)</div>
+<div class="stan-card">
+  <div class="stan-photo" style="background:#0e1f0a;display:flex;align-items:center;justify-content:center;overflow:hidden">
+    <svg width="100%" height="110" viewBox="0 0 420 110" preserveAspectRatio="xMidYMid slice" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Obloha -->
+      <rect width="420" height="110" fill="#0e1f0a"/>
+      <!-- Vzdálené kopce -->
+      <ellipse cx="70" cy="95" rx="110" ry="55" fill="#1a3d10"/>
+      <ellipse cx="240" cy="100" rx="140" ry="60" fill="#1e4812"/>
+      <ellipse cx="390" cy="90" rx="100" ry="50" fill="#1a3d10"/>
+      <!-- Přední travnatý terén -->
+      <path d="M0 85 Q60 70 120 80 Q180 88 240 75 Q300 62 360 78 Q400 86 420 80 L420 110 L0 110 Z" fill="#2a5c18"/>
+      <!-- Stromek vlevo -->
+      <rect x="55" y="52" width="5" height="28" rx="2" fill="#3a2a10"/>
+      <ellipse cx="57" cy="50" rx="14" ry="18" fill="#2d6b1a"/>
+      <ellipse cx="57" cy="44" rx="10" ry="13" fill="#3a8020"/>
+      <!-- Stromek střed -->
+      <rect x="198" y="45" width="5" height="32" rx="2" fill="#3a2a10"/>
+      <ellipse cx="200" cy="42" rx="16" ry="20" fill="#2d6b1a"/>
+      <ellipse cx="200" cy="36" rx="11" ry="14" fill="#3a8020"/>
+      <!-- Stromek vpravo -->
+      <rect x="340" y="50" width="5" height="28" rx="2" fill="#3a2a10"/>
+      <ellipse cx="342" cy="48" rx="14" ry="18" fill="#2d6b1a"/>
+      <ellipse cx="342" cy="42" rx="10" ry="13" fill="#3a8020"/>
+      <!-- Malý keř -->
+      <ellipse cx="130" cy="82" rx="18" ry="10" fill="#2d6b1a"/>
+      <ellipse cx="145" cy="78" rx="14" ry="9" fill="#348a1e"/>
+      <!-- Kvítky -->
+      <circle cx="85" cy="87" r="3" fill="#f5c842" opacity=".8"/>
+      <circle cx="270" cy="83" r="2.5" fill="#f5c842" opacity=".7"/>
+      <circle cx="310" cy="86" r="2" fill="#fff" opacity=".6"/>
+      <!-- Slunce / měsíc v rohu -->
+      <circle cx="380" cy="18" r="14" fill="#f5c842" opacity=".25"/>
+      <circle cx="380" cy="18" r="10" fill="#f5c842" opacity=".3"/>
+      <!-- Včela -->
+      <ellipse cx="290" cy="30" rx="6" ry="3.5" fill="#f5c842" opacity=".9"/>
+      <ellipse cx="290" cy="30" rx="3.5" ry="3.5" fill="#2a1a00" opacity=".6"/>
+      <line x1="287" y1="27" x2="284" y2="24" stroke="#e8d5a0" stroke-width="1.2" opacity=".7"/>
+      <line x1="293" y1="27" x2="296" y2="24" stroke="#e8d5a0" stroke-width="1.2" opacity=".7"/>
+    </svg>
+  </div>
+  <div class="stan-body">
+    <div>
+      <div class="stan-name">Kroha</div>
+      <div class="stan-sub">📍 Klení 69 · 🐝 3 včelstva</div>
+    </div>
+    <span class="stan-num">CZ001</span>
+  </div>
+</div>
+
+<!-- ── 5. Formulář ── -->
+<div class="section-label">Formulář – nahrání fotky</div>
+<div class="modal">
+  <h3>Upravit úl</h3>
+  <div class="fg">
+    <label>Fotka úlu</label>
+    <div class="photo-upload-box">
+      <div class="photo-sim-hive" style="width:100%;height:100%;position:absolute;inset:0;font-size:2.5rem;display:flex;align-items:center;justify-content:center;border-radius:10px"></div>
+      <div class="overlay">
+        <div style="font-size:1.5rem">📷</div>
+        <div style="font-size:.8rem;color:#fff">Změnit fotku</div>
+      </div>
+    </div>
+  </div>
+  <div class="fg">
+    <label>Název úlu</label>
+    <input class="input" value="Warre 1" readonly/>
+  </div>
+</div>
+
+<div class="modal">
+  <h3>Nový úl – bez fotky</h3>
+  <div class="fg">
+    <label>Fotka úlu (volitelně)</label>
+    <div class="photo-upload-box" style="height:80px">
+      <div style="font-size:1.5rem">📷</div>
+      <div>Přidat fotku</div>
+    </div>
+  </div>
+  <div class="fg">
+    <label>Název úlu</label>
+    <input class="input" placeholder="např. Warre 3" readonly/>
+  </div>
+</div>
+
+<div style="height:24px"></div>
+</body>
+</html>

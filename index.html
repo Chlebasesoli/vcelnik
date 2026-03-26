@@ -74,10 +74,25 @@
 
     /* Hive grid */
     .hive-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-    .hive-card{background:var(--surface);border-radius:var(--r);padding:14px;cursor:pointer;
+    .hive-card{background:var(--surface);border-radius:var(--r);padding:0;cursor:pointer;
                border:2px solid transparent;transition:border-color .15s,transform .1s;position:relative;overflow:hidden}
     .hive-card:active{transform:scale(.97)}
     .hive-card.warre{border-color:var(--s3)}
+    .hive-card-body{padding:14px}
+    /* Photo areas */
+    .hive-photo-top{width:100%;height:130px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#1a0f00;flex-shrink:0}
+    .hive-photo-top img{width:100%;height:100%;object-fit:cover;display:block}
+    .stan-photo-top{width:100%;height:100px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#0e1f0a;flex-shrink:0}
+    .stan-photo-top img{width:100%;height:100%;object-fit:cover;display:block}
+    .detail-photo-zone{width:100%;height:200px;overflow:hidden;border-radius:var(--r);position:relative;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;background:#1a0f00}
+    .detail-photo-zone img{width:100%;height:100%;object-fit:cover;display:block;border-radius:var(--r)}
+    .detail-photo-zone .photo-hint{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.65));padding:8px 12px;font-size:.7rem;color:#ddd;border-radius:0 0 var(--r) var(--r)}
+    /* Photo upload box in forms */
+    .photo-box{width:100%;height:110px;border:2px dashed var(--border);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer;color:var(--amber);font-size:.82rem;transition:all .2s;position:relative;overflow:hidden}
+    .photo-box:hover,.photo-box:focus{border-color:var(--gold);color:var(--gold)}
+    .photo-box img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;border-radius:8px}
+    .photo-box-ov{position:absolute;inset:0;background:rgba(0,0,0,.52);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;opacity:0;transition:opacity .2s;border-radius:8px}
+    .photo-box:hover .photo-box-ov{opacity:1}
     .hive-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
     .hive-name{font-size:.95rem;font-weight:700}
     .hive-loc{font-size:.7rem;color:var(--dim);margin-top:2px}
@@ -148,8 +163,9 @@
 
     /* Stanoviště */
     .stan-list{display:flex;flex-direction:column;gap:10px}
-    .stan-card{background:var(--surface);border-radius:var(--r);padding:14px;cursor:pointer;transition:transform .1s}
+    .stan-card{background:var(--surface);border-radius:var(--r);padding:0;cursor:pointer;transition:transform .1s;overflow:hidden}
     .stan-card:active{transform:scale(.98)}
+    .stan-card-body{padding:14px}
     .stan-hdr{display:flex;justify-content:space-between;align-items:flex-start}
     .stan-num{background:var(--amber);color:#1a1008;font-weight:700;font-size:.75rem;padding:2px 8px;border-radius:20px}
     .stan-name{font-size:.95rem;font-weight:700;margin-top:4px}
@@ -297,6 +313,8 @@
       <button class="btn btn-danger btn-sm" onclick="deleteCurrentHive()" data-i18n="detail.delete">Smazat</button>
     </div>
   </div>
+  <div class="detail-photo-zone" id="detailPhotoZone" onclick="document.getElementById('detailPhotoInput').click()"></div>
+  <input type="file" accept="image/*" id="detailPhotoInput" style="display:none" onchange="handleDetailPhotoInput(this)"/>
   <div class="stats-row">
     <div class="stat-box"><div class="stat-val" id="statRec">0</div><div class="stat-label" data-i18n="detail.records">Záznamy</div></div>
     <div class="stat-box"><div class="stat-val" id="statBoxes">0</div><div class="stat-label" data-i18n="detail.boxes">Nástavky</div></div>
@@ -342,6 +360,16 @@
 <div class="overlay" id="hiveModal">
   <div class="modal">
     <h3 id="hiveModalTitle" data-i18n="hive_modal.new">Nový úl</h3>
+    <div class="fg">
+      <label>📷 Fotka úlu <span style="font-size:.72rem;color:var(--dim)">(volitelně)</span></label>
+      <div class="photo-box" id="hivePhotoBox" onclick="document.getElementById('hivePhotoInput').click()">
+        <div style="font-size:1.4rem">📷</div>
+        <div>Přidat fotku</div>
+        <div class="photo-box-ov"><div style="font-size:1.2rem">📷</div><div style="font-size:.75rem;color:#fff">Změnit fotku</div></div>
+      </div>
+      <input type="file" accept="image/*" id="hivePhotoInput" style="display:none" onchange="handleHivePhotoInput(this)"/>
+      <button id="hivePhotoRemoveBtn" onclick="removeHivePhoto()" style="display:none;font-size:.72rem;color:var(--danger);background:none;border:none;cursor:pointer;padding:2px 0;text-align:left">✕ Odebrat fotku</button>
+    </div>
     <div class="fg"><label data-i18n="hive_modal.name_label">Název úlu</label><input id="hiveName" type="text" data-i18n-placeholder="hive_modal.name_placeholder" placeholder="např. Lípa, Úl č.1…" maxlength="40"/></div>
     <div class="row2">
       <div class="fg"><label data-i18n="hive_modal.type_label">Typ úlu</label>
@@ -761,6 +789,16 @@
 <div class="overlay" id="stanModal">
   <div class="modal">
     <h3 id="stanModalTitle" data-i18n="stan_modal.new">Nové stanoviště</h3>
+    <div class="fg">
+      <label>📷 Fotka stanoviště <span style="font-size:.72rem;color:var(--dim)">(volitelně)</span></label>
+      <div class="photo-box" id="stanPhotoBox" onclick="document.getElementById('stanPhotoInput').click()">
+        <div style="font-size:1.4rem">📷</div>
+        <div>Přidat fotku</div>
+        <div class="photo-box-ov"><div style="font-size:1.2rem">📷</div><div style="font-size:.75rem;color:#fff">Změnit fotku</div></div>
+      </div>
+      <input type="file" accept="image/*" id="stanPhotoInput" style="display:none" onchange="handleStanPhotoInput(this)"/>
+      <button id="stanPhotoRemoveBtn" onclick="removeStanPhoto()" style="display:none;font-size:.72rem;color:var(--danger);background:none;border:none;cursor:pointer;padding:2px 0;text-align:left">✕ Odebrat fotku</button>
+    </div>
     <div class="row2">
       <div class="fg"><label data-i18n="stan_modal.num_label">Číslo stanoviště</label><input id="stanNum" type="text" placeholder="1, A, 12b" maxlength="10"/></div>
       <div class="fg"><label data-i18n="stan_modal.name_label">Název</label><input id="stanName" type="text" placeholder="Zahrada u domu" maxlength="60"/></div>
@@ -857,6 +895,98 @@
 </div>
 
 <script>
+// ════════════════════════════
+//  PHOTO – SVG PLACEHOLDERS & COMPRESSION
+// ════════════════════════════
+const _SVG_HIVE=`<svg width="90" height="100" viewBox="0 0 110 120" fill="none" xmlns="http://www.w3.org/2000/svg"><polygon points="55,4 98,32 12,32" fill="#8b5e2a" stroke="#c4873e" stroke-width="1.5" stroke-linejoin="round"/><polygon points="55,4 98,32 55,26" fill="#6b4318"/><rect x="18" y="32" width="74" height="22" rx="2" fill="#7a4e20" stroke="#c4873e" stroke-width="1.2"/><line x1="18" y1="43" x2="92" y2="43" stroke="#5a3810" stroke-width="1"/><rect x="18" y="54" width="74" height="22" rx="2" fill="#6b4318" stroke="#c4873e" stroke-width="1.2"/><line x1="18" y1="65" x2="92" y2="65" stroke="#4a2c0e" stroke-width="1"/><rect x="18" y="76" width="74" height="22" rx="2" fill="#5c3812" stroke="#c4873e" stroke-width="1.2"/><rect x="36" y="94" width="38" height="5" rx="1" fill="#1a0f00" stroke="#c4873e" stroke-width="1"/><rect x="12" y="98" width="86" height="7" rx="3" fill="#4a2c0e" stroke="#c4873e" stroke-width="1.2"/><rect x="20" y="105" width="8" height="10" rx="2" fill="#3a2008"/><rect x="82" y="105" width="8" height="10" rx="2" fill="#3a2008"/><ellipse cx="22" cy="22" rx="4" ry="2.5" fill="#f5c842" opacity=".85"/><ellipse cx="22" cy="22" rx="2.5" ry="2.5" fill="#2a1a00" opacity=".5"/><line x1="20" y1="19.5" x2="18" y2="17" stroke="#e8d5a0" stroke-width="1" opacity=".7"/><line x1="24" y1="19.5" x2="26" y2="17" stroke="#e8d5a0" stroke-width="1" opacity=".7"/><ellipse cx="88" cy="48" rx="4" ry="2.5" fill="#f5c842" opacity=".75"/><ellipse cx="88" cy="48" rx="2.5" ry="2.5" fill="#2a1a00" opacity=".5"/><line x1="86" y1="45.5" x2="84" y2="43" stroke="#e8d5a0" stroke-width="1" opacity=".7"/><line x1="90" y1="45.5" x2="92" y2="43" stroke="#e8d5a0" stroke-width="1" opacity=".7"/></svg>`;
+
+const _SVG_STAN=`<svg width="100%" height="100%" viewBox="0 0 420 110" preserveAspectRatio="xMidYMid slice" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="420" height="110" fill="#0e1f0a"/><ellipse cx="70" cy="95" rx="110" ry="55" fill="#1a3d10"/><ellipse cx="240" cy="100" rx="140" ry="60" fill="#1e4812"/><ellipse cx="390" cy="90" rx="100" ry="50" fill="#1a3d10"/><path d="M0 85 Q60 70 120 80 Q180 88 240 75 Q300 62 360 78 Q400 86 420 80 L420 110 L0 110 Z" fill="#2a5c18"/><rect x="55" y="52" width="5" height="28" rx="2" fill="#3a2a10"/><ellipse cx="57" cy="50" rx="14" ry="18" fill="#2d6b1a"/><ellipse cx="57" cy="44" rx="10" ry="13" fill="#3a8020"/><rect x="198" y="45" width="5" height="32" rx="2" fill="#3a2a10"/><ellipse cx="200" cy="42" rx="16" ry="20" fill="#2d6b1a"/><ellipse cx="200" cy="36" rx="11" ry="14" fill="#3a8020"/><rect x="340" y="50" width="5" height="28" rx="2" fill="#3a2a10"/><ellipse cx="342" cy="48" rx="14" ry="18" fill="#2d6b1a"/><ellipse cx="342" cy="42" rx="10" ry="13" fill="#3a8020"/><ellipse cx="130" cy="82" rx="18" ry="10" fill="#2d6b1a"/><ellipse cx="145" cy="78" rx="14" ry="9" fill="#348a1e"/><circle cx="85" cy="87" r="3" fill="#f5c842" opacity=".8"/><circle cx="270" cy="83" r="2.5" fill="#f5c842" opacity=".7"/><circle cx="310" cy="86" r="2" fill="#fff" opacity=".6"/><circle cx="380" cy="18" r="14" fill="#f5c842" opacity=".25"/><circle cx="380" cy="18" r="10" fill="#f5c842" opacity=".3"/><ellipse cx="290" cy="30" rx="6" ry="3.5" fill="#f5c842" opacity=".9"/><ellipse cx="290" cy="30" rx="3.5" ry="3.5" fill="#2a1a00" opacity=".6"/><line x1="287" y1="27" x2="284" y2="24" stroke="#e8d5a0" stroke-width="1.2" opacity=".7"/><line x1="293" y1="27" x2="296" y2="24" stroke="#e8d5a0" stroke-width="1.2" opacity=".7"/></svg>`;
+
+// Compress image: max 800px on longest side, JPEG 0.72 quality → ~30-50KB
+async function compressImage(file, maxPx=800, quality=0.72){
+  return new Promise((res,rej)=>{
+    const fr=new FileReader();
+    fr.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        let w=img.naturalWidth, h=img.naturalHeight;
+        if(Math.max(w,h)>maxPx){
+          if(w>=h){h=Math.round(h*maxPx/w);w=maxPx;}
+          else{w=Math.round(w*maxPx/h);h=maxPx;}
+        }
+        const c=document.createElement('canvas');
+        c.width=w; c.height=h;
+        c.getContext('2d').drawImage(img,0,0,w,h);
+        res(c.toDataURL('image/jpeg',quality));
+      };
+      img.onerror=rej;
+      img.src=e.target.result;
+    };
+    fr.onerror=rej;
+    fr.readAsDataURL(file);
+  });
+}
+
+// Pending photo state for forms
+let _pendingHivePhoto=null;  // null = no change; '' = remove; 'data:...' = new photo
+let _pendingStanPhoto=null;
+
+function _setPhotoBox(boxId, removeBtnId, dataUrl){
+  const box=document.getElementById(boxId);
+  const btn=document.getElementById(removeBtnId);
+  if(!box) return;
+  // Remove any existing img
+  box.querySelectorAll('img').forEach(x=>x.remove());
+  if(dataUrl){
+    const img=document.createElement('img');
+    img.src=dataUrl;
+    box.insertBefore(img,box.firstChild);
+    btn.style.display='';
+  } else {
+    btn.style.display='none';
+  }
+}
+
+async function handleHivePhotoInput(input){
+  if(!input.files[0]) return;
+  const compressed=await compressImage(input.files[0]).catch(()=>null);
+  if(!compressed) return;
+  _pendingHivePhoto=compressed;
+  _setPhotoBox('hivePhotoBox','hivePhotoRemoveBtn',compressed);
+  input.value='';
+}
+function removeHivePhoto(){
+  _pendingHivePhoto='';
+  _setPhotoBox('hivePhotoBox','hivePhotoRemoveBtn',null);
+}
+
+async function handleStanPhotoInput(input){
+  if(!input.files[0]) return;
+  const compressed=await compressImage(input.files[0]).catch(()=>null);
+  if(!compressed) return;
+  _pendingStanPhoto=compressed;
+  _setPhotoBox('stanPhotoBox','stanPhotoRemoveBtn',compressed);
+  input.value='';
+}
+function removeStanPhoto(){
+  _pendingStanPhoto='';
+  _setPhotoBox('stanPhotoBox','stanPhotoRemoveBtn',null);
+}
+
+async function handleDetailPhotoInput(input){
+  if(!input.files[0]) return;
+  const h=data.hives.find(x=>x.id===currentHiveId);
+  if(!h) return;
+  const compressed=await compressImage(input.files[0]).catch(()=>null);
+  if(!compressed) return;
+  try{
+    await _restPatch('hives','id=eq.'+currentHiveId,{photo:compressed,updated_at:new Date().toISOString()});
+    await loadAllData();
+    renderDetail();
+  }catch(e){alert('❌ Chyba při ukládání fotky:\n'+e.message);}
+  input.value='';
+}
+
 // ════════════════════════════
 //  SUPABASE INIT
 // ════════════════════════════
@@ -2571,12 +2701,15 @@ function renderHives(){
     const qDot=qc?`<span title="Matka ${q.rok}" style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:${qc.bg};color:${qc.fg};font-size:.6rem;font-weight:800;flex-shrink:0">${qc.mnemonic}</span>`:'';
     const qWarn=q.stav==='chybí'?`<span class="badge danger">${t('badge.missing_queen')}</span>`:
       (qAge!==null&&qAge>=2)?`<span class="badge warn">${t('badge.old_queen')}</span>`:'';
-    card.innerHTML=`<div class="hive-top"><div><div class="hive-name">${h.type==='Warré'?'🏚️':'🏠'} ${esc(h.name)}</div>
+    const photoTop=h.photo
+      ?`<div class="hive-photo-top"><img src="${h.photo}" alt=""/></div>`
+      :`<div class="hive-photo-top">${_SVG_HIVE}</div>`;
+    card.innerHTML=`${photoTop}<div class="hive-card-body"><div class="hive-top"><div><div class="hive-name">${h.type==='Warré'?'🏚️':'🏠'} ${esc(h.name)}</div>
       <div class="hive-loc">${esc(getStanName(h.stanId))}</div></div>
       ${qDot}</div>
       <div class="hive-meta"><span class="badge ${sc}">${esc(h.status)}</span>
       <span class="badge">${esc(h.type)}</span>${boxes?`<span class="badge warn">📦 ${boxes}</span>`:''}${qWarn}</div>
-      ${tower}<div class="hive-last">${da===null?t('hives.no_record'):da===0?t('hives.today'):t('hives.days_ago',{n:da})}</div>`;
+      ${tower}<div class="hive-last">${da===null?t('hives.no_record'):da===0?t('hives.today'):t('hives.days_ago',{n:da})}</div></div>`;
     card.onclick=()=>openHiveDetail(h.id);
     grid.appendChild(card);
   });
@@ -2742,6 +2875,9 @@ function openHiveModal(id=null){
   data.hives.filter(x=>x.id!==id).forEach(hv=>{
     const o=document.createElement('option'); o.value=hv.id; o.textContent=hv.name; srcSel.appendChild(o);
   });
+  // Photo
+  _pendingHivePhoto=null;
+  _setPhotoBox('hivePhotoBox','hivePhotoRemoveBtn',h?.photo||null);
   fillOriginModal(h);
   // Queen fields – show simplified section for new hive, full profile for edit
   const q=h?.queen||{};
@@ -2797,12 +2933,14 @@ async function saveHive(){
   };
   if(editHiveId){
     const stanId=document.getElementById('hiveStanId').value||null;
+    const photoPayload=_pendingHivePhoto!==null?{photo:_pendingHivePhoto||null}:{};
     await _restPatch('hives','id=eq.'+editHiveId,{
       name, type:document.getElementById('hiveType').value,
       status:document.getElementById('hiveStatus').value,
       stan_id:stanId,
       note:document.getElementById('hiveNote').value.trim(),
       origin, queen,
+      ...photoPayload,
       updated_at:new Date().toISOString(),
     });
   } else {
@@ -2817,6 +2955,7 @@ async function saveHive(){
       stan_id:stanId,
       note:document.getElementById('hiveNote').value.trim(),
       nastavky, origin, queen,
+      photo:_pendingHivePhoto||null,
     });
 
     // ── Automatický první záznam „Převzetí" pro od chovatele / koupeno
@@ -2935,6 +3074,17 @@ function renderDetail(){
   document.getElementById('statRec').textContent=recs.length;
   document.getElementById('statBoxes').textContent=boxes;
   document.getElementById('statDays').textContent=last?daysAgo(last.date):'–';
+  // Photo zone
+  const pz=document.getElementById('detailPhotoZone');
+  if(pz){
+    if(h.photo){
+      pz.style.display='';
+      pz.innerHTML=`<img src="${h.photo}" alt=""/><div class="photo-hint">📷 Klepni pro změnu fotky</div>`;
+    } else {
+      pz.style.display='';
+      pz.innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--amber);opacity:.7">${_SVG_HIVE}<div style="font-size:.75rem">📷 Klepni pro přidání fotky</div></div>`;
+    }
+  }
   renderTower(h);
   renderWeightChart(recs);
   renderTimeline(recs);
@@ -3185,6 +3335,9 @@ function openStanModal(id=null){
   document.getElementById('stanKuKod').value=s?.ku_kod||'';
   document.getElementById('stanParcelaCislo').value=s?.parcela_cislo||'';
   document.getElementById('stanParcelaTyp').value=s?.parcela_typ||'';
+  // Photo
+  _pendingStanPhoto=null;
+  _setPhotoBox('stanPhotoBox','stanPhotoRemoveBtn',s?.photo||null);
   openModal('stanModal');
 }
 async function saveStan(){
@@ -3198,9 +3351,10 @@ async function saveStan(){
     parcela_typ:document.getElementById('stanParcelaTyp').value.trim()};
   try{
     if(editStanId){
-      await _restPatch('stanoviste','id=eq.'+editStanId,{...obj, updated_at:new Date().toISOString()});
+      const stanPhotoPayload=_pendingStanPhoto!==null?{photo:_pendingStanPhoto||null}:{};
+      await _restPatch('stanoviste','id=eq.'+editStanId,{...obj,...stanPhotoPayload, updated_at:new Date().toISOString()});
     } else {
-      await _restPost('stanoviste',{id:uid(), user_id:currentUser.id, ...obj});
+      await _restPost('stanoviste',{id:uid(), user_id:currentUser.id, ...obj, photo:_pendingStanPhoto||null});
     }
     await loadAllData();
     closeModal('stanModal'); renderStan();
@@ -3212,7 +3366,12 @@ function renderStan(){
   list.innerHTML=data.stanoviste.map(s=>{
     const hives=data.hives.filter(h=>h.stanId===s.id);
     const pills=hives.map(h=>`<span class="badge warn" onclick="event.stopPropagation();openHiveDetail('${h.id}')" style="cursor:pointer">🐝 ${esc(h.name)}</span>`).join('');
+    const stanPhotoTop=s.photo
+      ?`<div class="stan-photo-top"><img src="${s.photo}" alt=""/></div>`
+      :`<div class="stan-photo-top">${_SVG_STAN}</div>`;
     return`<div class="stan-card" onclick="openStanModal('${s.id}')">
+      ${stanPhotoTop}
+      <div class="stan-card-body">
       <div class="stan-hdr"><div><div class="stan-name">${esc(s.name)}</div>${s.address?`<div class="stan-sub">📍 ${esc(s.address)}</div>`:''}</div>
       <span class="stan-num">${t('stan.num_prefix')}${esc(s.number)}</span></div>
       ${s.gps?`<div class="stan-sub" style="margin-top:4px">🗺 ${esc(s.gps)}</div>`:''}
@@ -3220,7 +3379,7 @@ function renderStan(){
       <div style="display:flex;gap:8px;margin-top:10px">
         <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openStanModal('${s.id}')">${t('stan.edit')}</button>
         <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteStan('${s.id}')">${t('stan.delete')}</button>
-      </div></div>`;
+      </div></div></div>`;
   }).join('');
 }
 async function deleteStan(id){
