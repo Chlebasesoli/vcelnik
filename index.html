@@ -3542,35 +3542,49 @@ async function migrateLocalStorage(){
   }catch(e){ alert('❌ Chyba při migraci: '+e.message); }
 }
 
-// Background warmup: keep retrying a POST until OPTIONS preflight is cached.
-// GET preflights are already handled by loadAllData() with _doFetch retries.
-// POST needs its own cache entry (per-URL per-method in browser cache).
-let _postPreflightWarmed = false;
-async function _warmupPostPreflight(){
-  if(_postPreflightWarmed) return;
+// ─────────────────────────────────────────────────────────────────────────────
+// CORS preflight warmup
+//
+// On this network, OPTIONS preflights to Supabase /rest/v1/* intermittently
+// hang (never respond). A successful OPTIONS response covers ALL HTTP methods
+// for that URL (Access-Control-Allow-Methods: GET, POST, PATCH, …), so ONE
+// successful POST request per URL caches both GET and POST preflights.
+//
+// Strategy: before loading data, fire a quick POST to each of the 5 table
+// URLs simultaneously, retry with 3 s timeout until every URL responds.
+// Only then call loadAllData() so all reads are preflight-cache-hits.
+// ─────────────────────────────────────────────────────────────────────────────
+const _WARMUP_TABLES = ['hives','records','tasks','stanoviste','profiles'];
+
+async function _warmupAllPreflights(){
   const token = await _getToken().catch(()=>null);
-  if(!token) return;
+  if(!token){ console.warn('[warmup] no token'); return; }
   const headers = {'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+token};
-  for(let i=0; i<15 && !_postPreflightWarmed; i++){
-    const ctrl = new AbortController();
-    const tid = setTimeout(()=>ctrl.abort(), 3000);
-    try{
-      await fetch(`${SUPA_URL}/rest/v1/hives`, {method:'POST', headers, body:'{}', signal:ctrl.signal});
-      clearTimeout(tid);
-      _postPreflightWarmed = true;
-      console.log('[warmup] POST preflight cached (attempt '+(i+1)+')');
-      return;
-    }catch(e){
-      clearTimeout(tid);
-      if(e.name==='AbortError'){
-        console.log('[warmup] attempt '+(i+1)+' timed out, retrying in 1 s…');
-        await new Promise(r=>setTimeout(r,1000));
-      } else {
-        await new Promise(r=>setTimeout(r,2000));
+  const warmed = new Set();
+
+  for(let attempt=0; attempt<25 && warmed.size < _WARMUP_TABLES.length; attempt++){
+    const pending = _WARMUP_TABLES.filter(t=>!warmed.has(t));
+    await Promise.all(pending.map(async t=>{
+      const ctrl = new AbortController();
+      const tid = setTimeout(()=>ctrl.abort(), 3000);
+      try{
+        await fetch(`${SUPA_URL}/rest/v1/${t}`, {method:'POST', headers, body:'{}', signal:ctrl.signal});
+        clearTimeout(tid);
+        warmed.add(t);
+        console.log('[warmup] '+t+' preflight cached (attempt '+(attempt+1)+')');
+      }catch(e){
+        clearTimeout(tid);
+        // timeout or error – will retry next round
       }
+    }));
+    if(warmed.size < _WARMUP_TABLES.length){
+      console.log('[warmup] '+warmed.size+'/'+_WARMUP_TABLES.length+' done, retrying in 1 s…');
+      await new Promise(r=>setTimeout(r,1000));
     }
   }
-  console.warn('[warmup] POST preflight warmup gave up after 15 attempts');
+  if(warmed.size < _WARMUP_TABLES.length){
+    console.warn('[warmup] gave up – only '+warmed.size+'/'+_WARMUP_TABLES.length+' cached');
+  }
 }
 
 let _lastLoadedUserId = null;
@@ -3578,21 +3592,21 @@ supa.auth.onAuthStateChange(async (_event, session) => {
   if(session?.user){
     const uid = session.user.id;
     showApp(session.user);
-    // Prevent duplicate loads when onAuthStateChange fires multiple times
-    // (INITIAL_SESSION + SIGNED_IN both fire on login)
     if(uid !== _lastLoadedUserId){
       _lastLoadedUserId = uid;
+      // Show loading indicator while we warm up preflights + fetch data
+      const dg = document.getElementById('dashGrid');
+      if(dg) dg.innerHTML = '<div style="padding:20px;text-align:center;color:#aaa;grid-column:1/-1">🐝 Načítám…</div>';
+      // Warm up all CORS preflights first – loadAllData will be instant after this
+      await _warmupAllPreflights();
       await loadAllData().catch(e => console.error('loadAllData error:', e));
       await migrateLocalStorage();
-      // Kick off background warmup so POST CORS preflight is cached before first save
-      _warmupPostPreflight();
     }
     updateProfileBtn();
     applyTranslations();
     renderDash();
   } else {
     _lastLoadedUserId = null;
-    _postPreflightWarmed = false; // reset on logout so next login re-warms
     showLogin();
   }
 });
