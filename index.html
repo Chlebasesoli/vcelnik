@@ -175,6 +175,11 @@
     .stan-name{font-size:.95rem;font-weight:700;margin-top:4px}
     .stan-sub{font-size:.72rem;color:var(--dim);margin-top:2px}
     .stan-hives{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+    .stan-map-wrap{margin:10px 0 6px;border-radius:10px;overflow:hidden;position:relative;background:var(--s2);min-height:40px}
+    .stan-map-wrap iframe{width:100%;height:160px;border:none;display:block}
+    .stan-map-loading{padding:14px;text-align:center;font-size:.75rem;color:var(--dim)}
+    .stan-map-open{display:inline-block;margin-top:4px;font-size:.75rem;color:var(--amber);font-weight:600;text-decoration:none}
+    .stan-map-open:active{opacity:.7}
 
     /* Tasks */
     .task-list{display:flex;flex-direction:column;gap:8px}
@@ -3744,6 +3749,51 @@ async function saveStan(){
     closeModal('stanModal'); renderStan();
   }catch(e){alert('❌ Chyba při ukládání stanoviště:\n'+e.message);console.error(e);}
 }
+// ── Mapa stanoviště ──
+const _geoCache={};
+async function _geocode(addr){
+  if(_geoCache[addr]!==undefined) return _geoCache[addr];
+  try{
+    const r=await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(addr)}&format=json&limit=1&countrycodes=cz,sk`,
+      {headers:{'Accept-Language':'cs'}});
+    const d=await r.json();
+    const c=d.length?{lat:parseFloat(d[0].lat),lon:parseFloat(d[0].lon)}:null;
+    _geoCache[addr]=c; return c;
+  }catch(e){_geoCache[addr]=null;return null;}
+}
+function _parseGps(gps){
+  if(!gps)return null;
+  const p=gps.split(',').map(x=>parseFloat(x.trim()));
+  return(p.length===2&&!isNaN(p[0])&&!isNaN(p[1]))?{lat:p[0],lon:p[1]}:null;
+}
+function _mapIframe(lat,lon){
+  const d=0.009;
+  return`<iframe src="https://www.openstreetmap.org/export/embed.html?bbox=${lon-d},${lat-d},${lon+d},${lat+d}&layer=mapnik&marker=${lat},${lon}" loading="lazy" title="mapa"></iframe>`;
+}
+function _mapsUrl(lat,lon,addr){
+  // iOS → Apple Maps, jinak Google Maps
+  if(/iphone|ipad|ipod/i.test(navigator.userAgent))
+    return `maps://maps.apple.com/?q=${encodeURIComponent(addr||'')}&ll=${lat},${lon}`;
+  return `https://www.google.com/maps?q=${lat},${lon}`;
+}
+async function _loadStanMap(id){
+  const s=data.stanoviste.find(x=>x.id===id);
+  const el=document.getElementById('stan-map-'+id);
+  if(!s||!el)return;
+  let c=_parseGps(s.gps);
+  if(!c&&s.address){
+    el.innerHTML=`<div class="stan-map-loading">🗺 Načítám mapu…</div>`;
+    c=await _geocode(s.address);
+  }
+  if(c){
+    const murl=_mapsUrl(c.lat,c.lon,s.address||s.name);
+    el.innerHTML=_mapIframe(c.lat,c.lon)+
+      `<a class="stan-map-open" href="${murl}" target="_blank" rel="noopener" onclick="event.stopPropagation()">↗ Otevřít v Mapách</a>`;
+  }else{
+    el.innerHTML='';
+  }
+}
+
 function renderStan(){
   const list=document.getElementById('stanList');
   if(!data.stanoviste.length){list.innerHTML=`<div class="empty"><div class="ei">📍</div><p>${t('stan.empty')}</p></div>`;return;}
@@ -3758,13 +3808,15 @@ function renderStan(){
       <div class="stan-card-body">
       <div class="stan-hdr"><div><div class="stan-name">${esc(s.name)}</div>${s.address?`<div class="stan-sub">📍 ${esc(s.address)}</div>`:''}</div>
       <span class="stan-num">${t('stan.num_prefix')}${esc(s.number)}</span></div>
-      ${s.gps?`<div class="stan-sub" style="margin-top:4px">🗺 ${esc(s.gps)}</div>`:''}
       <div class="stan-hives">${pills||`<span style="font-size:.72rem;color:var(--dim)">${t('stan.no_hives')}</span>`}</div>
+      ${(s.gps||s.address)?`<div class="stan-map-wrap" id="stan-map-${s.id}"><div class="stan-map-loading">🗺 Načítám mapu…</div></div>`:''}
       <div style="display:flex;gap:8px;margin-top:10px">
         <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openStanModal('${s.id}')">${t('stan.edit')}</button>
         <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteStan('${s.id}')">${t('stan.delete')}</button>
       </div></div></div>`;
   }).join('');
+  // Load maps async after render
+  data.stanoviste.forEach(s=>{ if(s.gps||s.address) _loadStanMap(s.id); });
 }
 async function deleteStan(id){
   const s=_state.stanoviste.find(x=>x.id===id);
