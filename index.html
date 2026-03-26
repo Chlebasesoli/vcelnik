@@ -139,10 +139,21 @@
     .tower-box .tb-frame{font-size:.78rem;color:var(--amber);font-weight:600}
     .tower-box .tb-frame.no-frame{color:var(--dim);font-weight:400;font-style:italic}
     .tower-box .tb-date{font-size:.68rem;color:var(--dim);flex-shrink:0;align-self:flex-start;padding-top:2px}
+    .tower-box .tb-edit{background:none;border:none;cursor:pointer;color:var(--dim);font-size:.85rem;
+                        padding:2px 6px;border-radius:6px;flex-shrink:0;transition:color .15s,background .15s}
+    .tower-box .tb-edit:hover,.tower-box .tb-edit:active{color:var(--amber);background:var(--s3)}
     .tower-box.top-box{background:#3a2008;border:1px solid var(--amber)}
     .tower-box.mid-box{background:var(--s2)}
     .tower-box.bot-box{background:var(--s2);border:1px dashed var(--s3)}
     .tower-empty{text-align:center;color:var(--dim);font-size:.8rem;padding:12px}
+    .tb-inline-edit{display:none;padding:10px 14px 12px;border-top:1px solid var(--s3);
+                    flex-wrap:wrap;gap:7px}
+    .tb-inline-edit.open{display:flex}
+    .tb-inline-edit .tb-ie-btn{padding:7px 12px;border:1px solid var(--s3);border-radius:8px;
+                                background:var(--bg);color:var(--text);font-size:.78rem;cursor:pointer;
+                                font-weight:600;transition:all .15s;white-space:nowrap}
+    .tb-inline-edit .tb-ie-btn.active{background:var(--amber);color:#1a1008;border-color:var(--amber)}
+    .tb-inline-edit .tb-ie-btn:active{filter:brightness(.85)}
 
     /* Weight chart */
     .chart-wrap{background:var(--surface);border-radius:var(--r);padding:14px;margin-bottom:14px}
@@ -3462,6 +3473,7 @@ function renderTower(h){
     return;
   }
   const FRAME_ICONS={'horní loučky':'🪵','Dělenův rámek':'🔲','Hoffmanův dřevěný':'🟫'};
+  const FRAMES=['horní loučky','Dělenův rámek','Hoffmanův dřevěný'];
   viz.innerHTML=ns.map((b,i)=>{
     const isTop=i===0, isBot=i===ns.length-1;
     const pos=isTop?t('tower.top'):isBot&&ns.length>1?t('tower.bottom'):t('tower.middle')+` ${i+1}`;
@@ -3470,15 +3482,40 @@ function renderTower(h){
     const frameHtml=b.frame
       ?`<span class="tb-frame">${frameIcon} ${b.frame}</span>`
       :`<span class="tb-frame no-frame">typ rámků není nastaven</span>`;
-    return`<div class="tower-box ${cls}">
+    const frameBtns=FRAMES.map(f=>`<button class="tb-ie-btn${b.frame===f?' active':''}"
+      onclick="setBoxFrame('${b.id}',${i},'${f}')">${FRAME_ICONS[f]} ${f}</button>`).join('')+
+      `<button class="tb-ie-btn${!b.frame?' active':''}" onclick="setBoxFrame('${b.id}',${i},'')">✕ Bez rámků</button>`;
+    return`<div class="tower-box ${cls}" id="tbox-${b.id}">
       <span class="tb-num">${i+1}</span>
       <div class="tb-body">
         <span class="tb-pos">${pos}</span>
         ${frameHtml}
       </div>
       <span class="tb-date">${fmtDate(b.dateAdded)}</span>
-    </div>`;
+      <button class="tb-edit" onclick="toggleBoxEdit('${b.id}')" title="Upravit rámky">✎</button>
+    </div>
+    <div class="tb-inline-edit" id="tbox-edit-${b.id}">${frameBtns}</div>`;
   }).join('');
+}
+
+function toggleBoxEdit(bid){
+  document.querySelectorAll('.tb-inline-edit').forEach(el=>{
+    if(el.id==='tbox-edit-'+bid) el.classList.toggle('open');
+    else el.classList.remove('open');
+  });
+}
+async function setBoxFrame(bid,idx,frame){
+  const h=data.hives.find(x=>x.id===currentHiveId);
+  if(!h) return;
+  const ns=[...(h.nastavky||[])];
+  ns[idx]={...ns[idx], frame};
+  h.nastavky=ns;
+  // close inline editor
+  const ed=document.getElementById('tbox-edit-'+bid);
+  if(ed) ed.classList.remove('open');
+  renderTower(h);
+  // persist
+  await _restPatch('hives','id=eq.'+h.id,{nastavky:ns, updated_at:new Date().toISOString()});
 }
 
 function renderWeightChart(recs){
