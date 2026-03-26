@@ -1298,6 +1298,7 @@ const TRANSLATIONS={
     'hist.box_moves':'📦 Pohyby nástavků',
     'hist.key_events':'📋 Klíčové události',
     'hist.origin':'Původ včelstva',
+    'hist.init_state':'Počáteční stav úlu',
     'hist.no_moves':'Žádné pohyby nástavků.',
     'hist.no_events':'Žádné klíčové události.',
     'hist.acquired':'· získáno ',
@@ -1789,6 +1790,7 @@ const TRANSLATIONS={
     'hist.box_moves':'📦 Box movements',
     'hist.key_events':'📋 Key events',
     'hist.origin':'Colony origin',
+    'hist.init_state':'Initial hive setup',
     'hist.no_moves':'No box movements.',
     'hist.no_events':'No key events.',
     'hist.acquired':'· acquired ',
@@ -2266,6 +2268,7 @@ const TRANSLATIONS={
     'hist.box_moves':'📦 Zargenbewegungen',
     'hist.key_events':'📋 Schlüsselereignisse',
     'hist.origin':'Volkherkunft',
+    'hist.init_state':'Anfänglicher Aufbau',
     'hist.no_moves':'Keine Zargenbewegungen.',
     'hist.no_events':'Keine Schlüsselereignisse.',
     'hist.acquired':'· erworben ',
@@ -4151,12 +4154,28 @@ function openHistoryModal(){
   // ── Pohyby nástavků (nadíření + sklizně chronologicky)
   const moves=[...nadireni,...sklizne].sort((a,b)=>a.date.localeCompare(b.date));
   const bm=document.getElementById('histBoxMoves');
+  // Počáteční stav: aktuální nástavky − nadírování + sklizně
+  const initCount=Math.max(0,(h.nastavky?.length||0)-totalNadireno+totalSklizeno);
+  const initDate=h.origin?.date||(h.nastavky&&h.nastavky[0]?.dateAdded)||recs[0]?.date||null;
+  const mkBar=(n)=>`<div style="display:flex;gap:2px;align-items:center;margin-top:4px">
+    ${n>0?Array.from({length:n},()=>`<div style="width:18px;height:8px;border-radius:2px;background:var(--amber);opacity:0.7"></div>`).join('')
+        :`<span style="font-size:.7rem;color:var(--dim)">${t('hist.empty_boxes')}</span>`}
+  </div>`;
+  // Základ – zakládací stav
+  const initCard=`<div style="background:var(--s2);border-radius:8px;padding:8px 12px;border-left:3px solid var(--amber)">
+    <div style="display:flex;justify-content:space-between;align-items:center;font-size:.8rem">
+      <span style="color:var(--amber);font-weight:700">🏠 ${t('hist.init_state')}</span>
+      <span style="color:var(--dim);font-size:.72rem">${initDate?fmtDate(initDate):'–'}</span>
+    </div>
+    <div style="font-size:.7rem;color:var(--dim);margin-top:2px">${t('hist.boxes_count',{n:initCount})}</div>
+    ${mkBar(initCount)}
+  </div>`;
   if(!moves.length){
-    bm.innerHTML=`<div style="font-size:.8rem;color:var(--dim);padding:4px 0">${t('hist.no_moves')}</div>`;
+    bm.innerHTML=initCard;
   } else {
-    // running tally
-    let cur=0;
-    bm.innerHTML=moves.map(r=>{
+    // running tally starting from initial count
+    let cur=initCount;
+    bm.innerHTML=initCard+moves.map(r=>{
       const isNad=r.type==='nadireni';
       const n=+r.data?.pocet||1;
       const prev=cur;
