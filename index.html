@@ -174,7 +174,14 @@
     .stan-num{background:var(--amber);color:#1a1008;font-weight:700;font-size:.75rem;padding:2px 8px;border-radius:20px}
     .stan-name{font-size:.95rem;font-weight:700;margin-top:4px}
     .stan-sub{font-size:.72rem;color:var(--dim);margin-top:2px}
-    .stan-hives{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+    .stan-hives{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .stan-hive-btn{display:flex;align-items:center;gap:6px;background:var(--s2);border:1px solid var(--s3);
+                   border-radius:10px;padding:8px 12px;cursor:pointer;transition:background .15s,border-color .15s;
+                   font-size:.82rem;font-weight:600;color:var(--text);min-height:44px}
+    .stan-hive-btn:active{background:var(--s3);border-color:var(--amber)}
+    .stan-hive-btn .shi{font-size:1.1rem}
+    .stan-hive-btn .shn{font-size:.82rem;font-weight:700}
+    .stan-hive-btn .shs{font-size:.68rem;color:var(--dim);margin-top:1px}
     .stan-map-wrap{margin:10px 0 6px;border-radius:10px;overflow:hidden;position:relative;background:var(--s2);min-height:40px}
     .stan-map-wrap iframe{width:100%;height:160px;border:none;display:block}
     .stan-map-loading{padding:14px;text-align:center;font-size:.75rem;color:var(--dim)}
@@ -3799,7 +3806,13 @@ function renderStan(){
   if(!data.stanoviste.length){list.innerHTML=`<div class="empty"><div class="ei">📍</div><p>${t('stan.empty')}</p></div>`;return;}
   list.innerHTML=data.stanoviste.map(s=>{
     const hives=data.hives.filter(h=>h.stanId===s.id);
-    const pills=hives.map(h=>`<span class="badge warn" onclick="event.stopPropagation();openHiveDetail('${h.id}')" style="cursor:pointer">🐝 ${esc(h.name)}</span>`).join('');
+    const pills=hives.map(h=>{
+      const boxes=h.nastavky?.length||0;
+      return`<div class="stan-hive-btn" onclick="event.stopPropagation();openHiveDetail('${h.id}')">
+        <span class="shi">🐝</span>
+        <div><div class="shn">${esc(h.name)}</div><div class="shs">${boxes} nástavk${boxes===1?'':'y'}</div></div>
+      </div>`;
+    }).join('');
     const stanPhotoTop=s.photo
       ?`<div class="stan-photo-top"><img src="${s.photo}" alt=""/></div>`
       :`<div class="stan-photo-top">${_SVG_STAN}</div>`;
