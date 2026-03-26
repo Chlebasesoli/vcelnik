@@ -2348,14 +2348,14 @@ async function _restPatch(table, filter, body){
   if(!r.ok){ const e=await r.json().catch(()=>({message:'HTTP '+r.status})); throw new Error(e.message||'HTTP '+r.status); }
 }
 async function _restGet(table, params=''){
-  // CORS-simple GET: JWT in ?apikey= query param, ZERO custom headers.
-  // No custom headers → no CORS preflight → works even when OPTIONS is blocked.
-  // Use _cachedSession (set by onAuthStateChange) – never call getSession()
-  // because getSession() may POST to refresh an expired token → OPTIONS hangs.
-  const jwt = _cachedSession?.access_token || SUPA_KEY;
-  const sep = params ? '&' : '';
-  const url = `${SUPA_URL}/rest/v1/${table}?apikey=${encodeURIComponent(jwt)}${sep}${params}`;
-  const r = await fetch(url); // no custom headers = no CORS preflight
+  // Use _doFetch with proper headers (apikey + Authorization).
+  // OPTIONS preflights are pre-cached by _warmupAllPreflights() which runs
+  // before loadAllData() – so these requests hit the cache and go through instantly.
+  const sep = params ? '?' : '';
+  const r = await _doFetch(`${SUPA_URL}/rest/v1/${table}${sep}${params}`, {
+    method:'GET',
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+await _getToken()},
+  });
   if(!r.ok){ const e=await r.json().catch(()=>({message:'HTTP '+r.status})); throw new Error(e.message||'HTTP '+r.status); }
   return r.json();
 }
@@ -3602,13 +3602,13 @@ supa.auth.onAuthStateChange(async (_event, session) => {
     showApp(session.user);
     if(uid !== _lastLoadedUserId){
       _lastLoadedUserId = uid;
-      // Reads use no-preflight simple GET (_restGet puts JWT in query param).
-      // Load data directly – no warmup needed for reads.
+      // Warmup caches OPTIONS preflights for all 5 table URLs (GET+POST+PATCH).
+      // With _cachedSession fix, _getToken() no longer calls getSession(), so
+      // warmup runs fast (seen: attempt 1 succeeds → 403 Forbidden from RLS,
+      // but OPTIONS is cached). loadAllData() then hits the cache instantly.
+      await _warmupAllPreflights();
       await loadAllData().catch(e => console.error('loadAllData error:', e));
       await migrateLocalStorage();
-      // Warm up POST preflight in background for saves (fire-and-forget).
-      // OPTIONS for POST might be blocked on some networks; warmup keeps retrying.
-      _warmupAllPreflights();
     }
     updateProfileBtn();
     applyTranslations();
