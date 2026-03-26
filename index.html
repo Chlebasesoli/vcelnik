@@ -2344,6 +2344,8 @@ async function _restPatch(table, filter, body){
 }
 
 async function loadAllData(){
+  const user = currentUser; // capture now – currentUser may change during async ops
+  if(!user) return;
   const [hivesRes, recordsRes, tasksRes, stanRes] = await Promise.all([
     supa.from('hives').select('*').is('deleted_at', null).order('created_at'),
     supa.from('records').select('*').is('deleted_at', null).order('date', {ascending: false}),
@@ -2357,10 +2359,10 @@ async function loadAllData(){
       date: tk.due_date})),
     stanoviste: stanRes.data||[],
   };
-  // Load profile separately – uses .limit(1) instead of .single() to avoid
-  // triggering a separate CORS preflight with Accept: application/vnd.pgrst.object+json
+  // Load profile separately – use captured user to avoid race condition where
+  // currentUser may be cleared by a concurrent onAuthStateChange event
   try{
-    const {data: rows} = await supa.from('profiles').select('*').eq('id', currentUser.id).limit(1);
+    const {data: rows} = await supa.from('profiles').select('*').eq('id', user.id).limit(1);
     const profData = rows?.[0];
     if(profData){
       profile = {
