@@ -1,0 +1,3505 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+  <meta name="theme-color" content="#1a1008"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <title>Včelník</title>
+  <link rel="manifest" href="manifest.json"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <style>
+    :root{
+      --bg:#1a1008;--surface:#2d1f0e;--s2:#3d2b14;--s3:#4a300f;
+      --amber:#f5a623;--gold:#ffd700;--ok:#7ab648;--danger:#e05a2b;
+      --text:#fff8e7;--dim:#c8a96a;--r:14px;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+         min-height:100dvh;display:flex;flex-direction:column;max-width:520px;margin:0 auto}
+
+    /* Header */
+    header{background:var(--surface);padding:14px 16px 10px;display:flex;align-items:center;gap:10px;
+           border-bottom:1px solid var(--s3);position:sticky;top:0;z-index:10}
+    header .logo{font-size:1.5rem}
+    header h1{font-size:1.2rem;font-weight:700;color:var(--amber)}
+    header .sub{font-size:.72rem;color:var(--dim);margin-top:1px}
+    .profile-btn{margin-left:auto;width:38px;height:38px;border-radius:50%;background:var(--s2);
+                 border:2px solid var(--s3);cursor:pointer;font-size:.85rem;font-weight:700;
+                 color:var(--dim);display:flex;align-items:center;justify-content:center;transition:border-color .15s}
+    .profile-btn.filled{border-color:var(--amber);color:var(--amber)}
+
+    /* Nav */
+    nav{background:var(--surface);border-top:1px solid var(--s3);display:flex;
+        position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;z-index:10}
+    nav button{flex:1;padding:9px 4px 13px;background:none;border:none;cursor:pointer;color:var(--dim);
+               font-size:.62rem;font-weight:600;letter-spacing:.3px;display:flex;flex-direction:column;
+               align-items:center;gap:3px;transition:color .15s}
+    nav button .ni{font-size:1.4rem}
+    nav button.active{color:var(--amber)}
+
+    /* Main */
+    main{flex:1;padding:14px 14px 88px;overflow-y:auto}
+    .view{display:none}.view.active{display:block}
+
+    /* Headings */
+    .sec{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .sec h2{font-size:.9rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:1px}
+
+    /* Buttons */
+    .btn{border:none;cursor:pointer;border-radius:var(--r);font-weight:700;font-size:.88rem;
+         padding:10px 16px;transition:filter .15s}
+    .btn:active{filter:brightness(.85)}
+    .btn-primary{background:var(--amber);color:#1a1008}
+    .btn-ghost{background:var(--s2);color:var(--text)}
+    .btn-danger{background:var(--danger);color:#fff}
+    .btn-sm{padding:5px 11px;font-size:.78rem}
+    .btn-icon{background:var(--amber);color:#1a1008;border:none;cursor:pointer;width:34px;height:34px;
+              border-radius:50%;font-size:1.2rem;display:flex;align-items:center;justify-content:center;font-weight:700}
+
+    /* Dashboard */
+    .dash-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
+    .dash-box{background:var(--surface);border-radius:var(--r);padding:14px;display:flex;align-items:center;gap:12px}
+    .dash-icon{font-size:1.8rem}
+    .dash-val{font-size:1.5rem;font-weight:700;color:var(--amber)}
+    .dash-label{font-size:.7rem;color:var(--dim);margin-top:1px}
+
+    /* Recent activity */
+    .activity-list{display:flex;flex-direction:column;gap:8px}
+    .activity-item{background:var(--surface);border-radius:var(--r);padding:11px 14px;
+                   display:flex;align-items:flex-start;gap:10px;cursor:pointer}
+    .activity-icon{font-size:1.3rem;flex-shrink:0;margin-top:1px}
+    .activity-body .at{font-size:.82rem;font-weight:600}
+    .activity-body .as{font-size:.72rem;color:var(--dim);margin-top:2px}
+
+    /* Hive grid */
+    .hive-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    .hive-card{background:var(--surface);border-radius:var(--r);padding:14px;cursor:pointer;
+               border:2px solid transparent;transition:border-color .15s,transform .1s;position:relative;overflow:hidden}
+    .hive-card:active{transform:scale(.97)}
+    .hive-card.warre{border-color:var(--s3)}
+    .hive-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+    .hive-name{font-size:.95rem;font-weight:700}
+    .hive-loc{font-size:.7rem;color:var(--dim);margin-top:2px}
+    .hive-meta{display:flex;gap:5px;flex-wrap:wrap}
+    .badge{font-size:.66rem;font-weight:600;padding:2px 7px;border-radius:20px;background:var(--s2);color:var(--dim)}
+    .badge.ok{background:#2a4018;color:var(--ok)}.badge.warn{background:#4a2a08;color:var(--amber)}.badge.danger{background:#3a1808;color:var(--danger)}
+    .hive-last{font-size:.68rem;color:var(--dim);margin-top:6px}
+    .mini-tower{display:flex;flex-direction:column;gap:2px;margin-top:8px}
+    .mini-box{height:8px;border-radius:3px;background:var(--s3)}
+    .mini-box:first-child{background:var(--amber);opacity:.7}
+
+    /* Add hive */
+    .hive-add{background:var(--surface);border-radius:var(--r);padding:14px;cursor:pointer;
+              border:2px dashed var(--s3);display:flex;flex-direction:column;align-items:center;
+              justify-content:center;gap:6px;min-height:120px;color:var(--dim);font-size:.82rem;
+              font-weight:600;transition:border-color .15s,color .15s}
+    .hive-add:active{border-color:var(--amber);color:var(--amber)}
+    .hive-add .plus{font-size:1.8rem}
+
+    /* Detail */
+    .detail-hdr{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+    .back-btn{background:var(--s2);border:none;cursor:pointer;color:var(--text);border-radius:50%;
+              width:32px;height:32px;font-size:1rem;display:flex;align-items:center;justify-content:center}
+    .detail-title{font-size:1rem;font-weight:700}
+    .detail-sub{font-size:.75rem;color:var(--dim)}
+    .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+    .stat-box{background:var(--surface);border-radius:var(--r);padding:10px;text-align:center}
+    .stat-val{font-size:1.3rem;font-weight:700;color:var(--amber)}
+    .stat-label{font-size:.6rem;color:var(--dim);margin-top:2px;text-transform:uppercase}
+
+    /* Tower */
+    .tower-wrap{background:var(--surface);border-radius:var(--r);padding:14px;margin-bottom:14px}
+    .tower-wrap h3{font-size:.8rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;
+                   margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+    .tower{display:flex;flex-direction:column;gap:4px}
+    .tower-box{border-radius:8px;padding:9px 12px;display:flex;align-items:center;gap:10px;font-size:.78rem}
+    .tower-box .tb-num{font-weight:700;color:var(--amber);width:22px;flex-shrink:0}
+    .tower-box .tb-label{flex:1}
+    .tower-box .tb-date{font-size:.68rem;color:var(--dim)}
+    .tower-box.top-box{background:#4a300f;border:1px solid var(--amber)}
+    .tower-box.mid-box{background:var(--s2)}
+    .tower-box.bot-box{background:var(--s2);border:1px dashed var(--s3)}
+    .tower-empty{text-align:center;color:var(--dim);font-size:.8rem;padding:12px}
+
+    /* Weight chart */
+    .chart-wrap{background:var(--surface);border-radius:var(--r);padding:14px;margin-bottom:14px}
+    .chart-wrap h3{font-size:.8rem;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
+    .chart-svg{width:100%;display:block}
+
+    /* Timeline */
+    .timeline{display:flex;flex-direction:column;gap:8px}
+    .tl-item{background:var(--surface);border-radius:var(--r);padding:12px 14px;border-left:3px solid var(--s3)}
+    .tl-top{display:flex;justify-content:space-between;align-items:flex-start}
+    .tl-type{font-size:.78rem;font-weight:700;display:flex;align-items:center;gap:5px}
+    .tl-date{font-size:.7rem;color:var(--dim)}
+    .tl-body{font-size:.8rem;margin-top:5px;line-height:1.4}
+    .tl-del{background:none;border:none;cursor:pointer;color:var(--dim);font-size:1rem;padding:2px}
+
+    /* Record type picker */
+    .type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+    .type-btn{background:var(--bg);border:2px solid var(--s3);border-radius:10px;padding:10px 6px;
+              cursor:pointer;text-align:center;transition:all .15s}
+    .type-btn.active{border-color:var(--amber);background:var(--s2)}
+    .type-btn .ti{font-size:1.4rem}
+    .type-btn .tl2{font-size:.66rem;font-weight:600;color:var(--dim);margin-top:3px}
+    .type-btn.active .tl2{color:var(--amber)}
+    .dyn-form{display:none}.dyn-form.visible{display:block}
+
+    /* Stanoviště */
+    .stan-list{display:flex;flex-direction:column;gap:10px}
+    .stan-card{background:var(--surface);border-radius:var(--r);padding:14px;cursor:pointer;transition:transform .1s}
+    .stan-card:active{transform:scale(.98)}
+    .stan-hdr{display:flex;justify-content:space-between;align-items:flex-start}
+    .stan-num{background:var(--amber);color:#1a1008;font-weight:700;font-size:.75rem;padding:2px 8px;border-radius:20px}
+    .stan-name{font-size:.95rem;font-weight:700;margin-top:4px}
+    .stan-sub{font-size:.72rem;color:var(--dim);margin-top:2px}
+    .stan-hives{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+
+    /* Tasks */
+    .task-list{display:flex;flex-direction:column;gap:8px}
+    .task-item{background:var(--surface);border-radius:var(--r);padding:11px 14px;display:flex;align-items:center;gap:10px}
+    .task-item.done{opacity:.5}
+    .task-check{width:22px;height:22px;border-radius:50%;border:2px solid var(--amber);background:none;cursor:pointer;
+                flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.85rem}
+    .task-item.done .task-check{background:var(--amber)}
+    .task-body{flex:1}
+    .task-title{font-size:.88rem;font-weight:600}
+    .task-item.done .task-title{text-decoration:line-through;color:var(--dim)}
+    .task-sub{font-size:.72rem;color:var(--dim);margin-top:2px}
+    .task-del{background:none;border:none;cursor:pointer;color:var(--dim);font-size:1rem;padding:2px}
+
+    /* Modal */
+    .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:100;align-items:flex-end;justify-content:center}
+    .overlay.open{display:flex}
+    .modal{background:var(--surface);border-radius:var(--r) var(--r) 0 0;padding:18px 18px 34px;
+           width:100%;max-width:520px;max-height:92dvh;overflow-y:auto}
+    .modal h3{font-size:.95rem;font-weight:700;margin-bottom:14px;color:var(--amber)}
+
+    /* Form */
+    .fg{margin-bottom:12px}
+    .fg label{display:block;font-size:.78rem;color:var(--dim);margin-bottom:4px;font-weight:600}
+    .fg input,.fg select,.fg textarea{width:100%;background:var(--bg);border:1px solid var(--s3);border-radius:8px;
+      color:var(--text);font-size:.88rem;padding:9px 11px;outline:none;font-family:inherit;transition:border-color .15s}
+    .fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--amber)}
+    .fg textarea{resize:vertical;min-height:72px}
+    .fg select option{background:var(--surface)}
+    .row2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+    .form-actions{display:flex;gap:8px;margin-top:16px}
+    .form-actions .btn{flex:1;padding:11px}
+    .tog-row{display:flex;gap:7px}
+    .tog-btn{flex:1;padding:8px 6px;border-radius:8px;border:2px solid var(--s3);background:var(--bg);
+             color:var(--dim);cursor:pointer;font-size:.75rem;font-weight:600;transition:all .15s;text-align:center}
+    .tog-btn.active{border-color:var(--amber);background:var(--s2);color:var(--amber)}
+    .tog-btn.ok.active{border-color:var(--ok);background:#2a4018;color:var(--ok)}
+
+    /* Empty */
+    .empty{text-align:center;padding:32px 16px;color:var(--dim)}
+    .empty .ei{font-size:2.5rem;margin-bottom:10px}
+    .empty p{font-size:.85rem}
+
+    /* ── Login screen ── */
+    #loginScreen{position:fixed;inset:0;background:var(--bg);z-index:1000;display:flex;flex-direction:column;
+                 align-items:center;justify-content:center;padding:24px;gap:20px}
+    #loginScreen.hidden{display:none}
+    .login-logo{font-size:3.5rem;line-height:1}
+    .login-title{font-size:1.6rem;font-weight:800;color:var(--amber);text-align:center}
+    .login-sub{font-size:.85rem;color:var(--dim);text-align:center;margin-top:-10px}
+    .login-card{background:var(--surface);border-radius:var(--r);padding:24px;width:100%;max-width:380px;
+                display:flex;flex-direction:column;gap:14px}
+    .login-tabs{display:flex;gap:6px;background:var(--s2);border-radius:10px;padding:4px}
+    .login-tab{flex:1;padding:8px;border:none;border-radius:8px;cursor:pointer;font-weight:700;
+               font-size:.85rem;background:none;color:var(--dim);transition:all .15s}
+    .login-tab.active{background:var(--amber);color:#1a1008}
+    .login-input{width:100%;background:var(--s2);border:1px solid var(--s3);border-radius:10px;
+                 padding:11px 14px;color:var(--text);font-size:.95rem;outline:none;transition:border-color .15s}
+    .login-input:focus{border-color:var(--amber)}
+    .login-btn{width:100%;padding:13px;background:var(--amber);color:#1a1008;border:none;border-radius:10px;
+               font-size:1rem;font-weight:800;cursor:pointer;transition:filter .15s}
+    .login-btn:active{filter:brightness(.85)}
+    .login-btn:disabled{filter:brightness(.5);cursor:default}
+    .login-err{font-size:.82rem;color:var(--danger);text-align:center;min-height:18px}
+    .login-ok{font-size:.82rem;color:var(--ok);text-align:center;min-height:18px}
+  </style>
+</head>
+<body>
+
+<!-- ══ LOGIN SCREEN ══ -->
+<div id="loginScreen">
+  <div class="login-logo">🐝</div>
+  <div class="login-title">Včelník</div>
+  <div class="login-sub">Správa včelstev Warré</div>
+  <div class="login-card">
+    <div class="login-tabs">
+      <button class="login-tab active" id="tabLogin" onclick="switchAuthTab('login')">Přihlásit se</button>
+      <button class="login-tab" id="tabRegister" onclick="switchAuthTab('register')">Registrovat</button>
+    </div>
+    <div id="authFormLogin">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <input class="login-input" id="loginEmail" type="email" placeholder="E-mail" autocomplete="email"/>
+        <input class="login-input" id="loginPassword" type="password" placeholder="Heslo" autocomplete="current-password"/>
+        <div class="login-err" id="loginErr"></div>
+        <button class="login-btn" id="loginBtn" onclick="doLogin()">Přihlásit se</button>
+      </div>
+    </div>
+    <div id="authFormRegister" style="display:none">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <input class="login-input" id="regEmail" type="email" placeholder="E-mail" autocomplete="email"/>
+        <input class="login-input" id="regPassword" type="password" placeholder="Heslo (min. 6 znaků)" autocomplete="new-password"/>
+        <input class="login-input" id="regPassword2" type="password" placeholder="Heslo znovu" autocomplete="new-password"/>
+        <div class="login-err" id="regErr"></div>
+        <div class="login-ok" id="regOk"></div>
+        <button class="login-btn" id="regBtn" onclick="doRegister()">Vytvořit účet</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<header>
+  <span class="logo">🐝</span>
+  <div><h1>Včelník</h1><div class="sub" id="headerSub" data-i18n="app.subtitle">Správa včelstev</div></div>
+  <button class="profile-btn" onclick="openProfileModal()" title="Profil včelaře">
+    <span id="profileAvatar">👤</span>
+  </button>
+</header>
+
+<main>
+
+<!-- ── PŘEHLED ── -->
+<div class="view active" id="viewDash">
+  <div class="dash-grid" id="dashGrid"></div>
+  <div class="sec"><h2 data-i18n="dash.recent">Poslední záznamy</h2></div>
+  <div class="activity-list" id="recentList"></div>
+</div>
+
+<!-- ── ÚLY ── -->
+<div class="view" id="viewUly">
+  <div class="sec"><h2 data-i18n="hives.title">Moje úly</h2></div>
+  <div class="hive-grid" id="hiveGrid"></div>
+</div>
+
+<!-- ── DETAIL ── -->
+<div class="view" id="viewDetail">
+  <div class="detail-hdr">
+    <button class="back-btn" onclick="goBack()">←</button>
+    <div>
+      <div class="detail-title" id="detailName"></div>
+      <div class="detail-sub" id="detailSub"></div>
+    </div>
+    <div style="margin-left:auto;display:flex;gap:6px">
+      <button class="btn btn-ghost btn-sm" onclick="openHistoryModal()">📜</button>
+      <button class="btn btn-ghost btn-sm" onclick="editCurrentHive()" data-i18n="detail.edit">Upravit</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteCurrentHive()" data-i18n="detail.delete">Smazat</button>
+    </div>
+  </div>
+  <div class="stats-row">
+    <div class="stat-box"><div class="stat-val" id="statRec">0</div><div class="stat-label" data-i18n="detail.records">Záznamy</div></div>
+    <div class="stat-box"><div class="stat-val" id="statBoxes">0</div><div class="stat-label" data-i18n="detail.boxes">Nástavky</div></div>
+    <div class="stat-box"><div class="stat-val" id="statDays">–</div><div class="stat-label" data-i18n="detail.days_since">Dní od záznamu</div></div>
+  </div>
+  <div class="tower-wrap">
+    <h3><span data-i18n="detail.tower_title">Vizuální věž nástavků</span> <span id="towerCount" style="color:var(--amber)"></span></h3>
+    <div class="tower" id="towerViz"></div>
+  </div>
+  <div class="chart-wrap" id="chartWrap" style="display:none">
+    <h3 data-i18n="detail.weight_title">Vývoj váhy (kg)</h3>
+    <div id="chartArea"></div>
+  </div>
+  <div class="sec">
+    <h2 data-i18n="detail.timeline">Timeline</h2>
+    <button class="btn-icon" onclick="openRecordModal()">+</button>
+  </div>
+  <div class="timeline" id="timeline"></div>
+</div>
+
+<!-- ── STANOVIŠTĚ ── -->
+<div class="view" id="viewStan">
+  <div class="sec"><h2 data-i18n="stan.title">Stanoviště</h2><button class="btn-icon" onclick="openStanModal()">+</button></div>
+  <div class="stan-list" id="stanList"></div>
+</div>
+
+<!-- ── ÚKOLY ── -->
+<div class="view" id="viewUkoly">
+  <div class="sec"><h2 data-i18n="tasks.title">Úkoly &amp; připomínky</h2><button class="btn-icon" onclick="openTaskModal()">+</button></div>
+  <div class="task-list" id="taskList"></div>
+</div>
+
+</main>
+
+<nav>
+  <button class="active" onclick="showView('dash')" id="navDash"><span class="ni">📊</span><span data-i18n="nav.dash">Přehled</span></button>
+  <button onclick="showView('uly')" id="navUly"><span class="ni">🐝</span><span data-i18n="nav.hives">Úly</span></button>
+  <button onclick="showView('stan')" id="navStan"><span class="ni">📍</span><span data-i18n="nav.stan">Stanoviště</span></button>
+  <button onclick="showView('ukoly')" id="navUkoly"><span class="ni">✅</span><span data-i18n="nav.tasks">Úkoly</span></button>
+</nav>
+
+<!-- ══ MODAL: Úl ══ -->
+<div class="overlay" id="hiveModal">
+  <div class="modal">
+    <h3 id="hiveModalTitle" data-i18n="hive_modal.new">Nový úl</h3>
+    <div class="fg"><label data-i18n="hive_modal.name_label">Název úlu</label><input id="hiveName" type="text" data-i18n-placeholder="hive_modal.name_placeholder" placeholder="např. Lípa, Úl č.1…" maxlength="40"/></div>
+    <div class="row2">
+      <div class="fg"><label data-i18n="hive_modal.type_label">Typ úlu</label>
+        <select id="hiveType">
+          <option value="Warré" data-i18n="htype.warre">Warré (lidový)</option>
+          <option value="Langstroth">Langstroth</option>
+          <option value="Dadant">Dadant</option>
+          <option value="Nástavkový" data-i18n="htype.nastavkovy">Nástavkový</option>
+          <option value="Jiný" data-i18n="htype.jiny">Jiný</option>
+        </select>
+      </div>
+      <div class="fg"><label data-i18n="hive_modal.status_label">Stav</label>
+        <select id="hiveStatus">
+          <option value="aktivní" data-i18n="hstatus.aktivni">Aktivní</option>
+          <option value="zimování" data-i18n="hstatus.zimovani">Zimování</option>
+          <option value="bez matky" data-i18n="hstatus.bez_matky">Bez matky</option>
+          <option value="rojení" data-i18n="hstatus.rojeni">Rojení</option>
+          <option value="slabé" data-i18n="hstatus.slabe">Slabé</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg"><label data-i18n="hive_modal.stan_label">Stanoviště</label>
+      <select id="hiveStanId"><option value="" data-i18n="hive_modal.stan_none">– Bez stanoviště –</option></select>
+    </div>
+    <div class="fg" id="initBoxesGroup">
+      <label data-i18n="hive_modal.init_boxes_label">Počáteční počet nástavků</label>
+      <input id="hiveInitBoxes" type="number" min="0" max="20" value="2"/>
+    </div>
+    <!-- Původ včelstva -->
+    <div class="fg"><label data-i18n="hive_modal.origin_label">Původ včelstva</label>
+      <div class="type-grid" id="originGrid" style="grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px">
+        <button class="type-btn" data-o="oddelek" onclick="setOrigin('oddelek')"><div class="ti">✂️</div><div class="tl2" data-i18n="origin_btn.oddelek">Vlastní oddělek</div></button>
+        <button class="type-btn" data-o="roj-vlastni" onclick="setOrigin('roj-vlastni')"><div class="ti">🐝</div><div class="tl2" data-i18n="origin_btn.roj_vlastni">Vlastní roj</div></button>
+        <button class="type-btn" data-o="roj-divoky" onclick="setOrigin('roj-divoky')"><div class="ti">🌿</div><div class="tl2" data-i18n="origin_btn.roj_divoky">Divoký roj</div></button>
+        <button class="type-btn" data-o="chovatel" onclick="setOrigin('chovatel')"><div class="ti">🤝</div><div class="tl2" data-i18n="origin_btn.chovatel">Od chovatele</div></button>
+        <button class="type-btn" data-o="koupeno" onclick="setOrigin('koupeno')"><div class="ti">🛒</div><div class="tl2" data-i18n="origin_btn.koupeno">Koupeno</div></button>
+        <button class="type-btn" data-o="jine" onclick="setOrigin('jine')"><div class="ti">📝</div><div class="tl2" data-i18n="origin_btn.jine">Jiné</div></button>
+      </div>
+    </div>
+    <!-- Datum získání -->
+    <div class="fg"><label data-i18n="hive_modal.acq_date_label">Datum získání (volitelně)</label>
+      <input id="hiveOriginDate" type="date"/>
+    </div>
+    <!-- Zdrojový úl (oddělek / vlastní roj) -->
+    <div class="fg" id="originSrcHiveGroup" style="display:none">
+      <label data-i18n="hive_modal.src_hive_label">Zdrojový úl</label>
+      <select id="hiveOriginSrcHive"><option value="" data-i18n="hive_modal.src_hive_placeholder">– vybrat –</option></select>
+    </div>
+    <!-- Chovatel / prodejce (od chovatele / koupeno) -->
+    <div class="fg" id="originBreederGroup" style="display:none">
+      <label id="originBreederLabel" data-i18n="hive_modal.breeder_label">Jméno chovatele</label>
+      <input id="hiveOriginBreeder" type="text" placeholder="Jan Novák" maxlength="80"/>
+      <input id="hiveOriginBreederContact" type="text" data-i18n-placeholder="hive_modal.breeder_contact_placeholder" placeholder="telefon / e-mail (volitelně)" maxlength="80" style="margin-top:6px"/>
+    </div>
+    <!-- Místo nálezu (divoký roj) -->
+    <div class="fg" id="originPlaceGroup" style="display:none">
+      <label data-i18n="hive_modal.place_label">Místo nálezu</label>
+      <input id="hiveOriginPlace" type="text" data-i18n-placeholder="hive_modal.place_placeholder" placeholder="např. park u kostela, les Borová…" maxlength="100"/>
+    </div>
+    <!-- Jiné -->
+    <div class="fg" id="originOtherGroup" style="display:none">
+      <label data-i18n="hive_modal.other_label">Popis původu</label>
+      <input id="hiveOriginOther" type="text" placeholder="…" maxlength="100"/>
+    </div>
+
+    <!-- ── Stav při převzetí (jen pro od chovatele / koupeno) ── -->
+    <div id="prevezetiGroup" style="display:none">
+      <div style="border-top:1px solid var(--s3);margin:12px 0 14px;position:relative">
+        <span style="position:absolute;top:-9px;left:12px;background:var(--surface);padding:0 8px;font-size:.72rem;color:var(--amber);font-weight:700" data-i18n="hive_modal.prevzeti_title">📋 Stav při převzetí</span>
+      </div>
+      <div class="fg">
+        <label data-i18n="hive_modal.sila_label">Síla včelstva</label>
+        <div class="tog-row" id="prevezetiSilaRow">
+          <button class="tog-btn" data-ps="1" onclick="togPrevSila(this)">1</button>
+          <button class="tog-btn" data-ps="2" onclick="togPrevSila(this)">2</button>
+          <button class="tog-btn active" data-ps="3" onclick="togPrevSila(this)">3</button>
+          <button class="tog-btn" data-ps="4" onclick="togPrevSila(this)">4</button>
+          <button class="tog-btn" data-ps="5" onclick="togPrevSila(this)">5</button>
+        </div>
+      </div>
+      <div class="fg">
+        <label data-i18n="hive_modal.health_cert_label">Zdravotní list doložen</label>
+        <div class="tog-row">
+          <button class="tog-btn ok" data-pz="ano" onclick="togPrevZdrav(this)" data-i18n="zdrav.ano">✓ Ano</button>
+          <button class="tog-btn active" data-pz="ne" onclick="togPrevZdrav(this)" data-i18n="zdrav.ne">✗ Ne</button>
+          <button class="tog-btn" data-pz="není vyžadován" onclick="togPrevZdrav(this)" data-i18n="zdrav.na">– N/A</button>
+        </div>
+      </div>
+      <div class="fg">
+        <label data-i18n="hive_modal.varroa_label">Poslední léčení varroázy (dle sdělení chovatele)</label>
+        <div class="row2">
+          <input id="prevVarroaDatum" type="date" placeholder="datum"/>
+          <input id="prevVarroaCim" type="text" placeholder="čím (např. Apivar, kys. šťavelová…)" maxlength="60"/>
+        </div>
+      </div>
+      <div class="fg">
+        <label data-i18n="hive_modal.prevzeti_note_label">Poznámka od chovatele / prodejce</label>
+        <textarea id="prevPoznamka" data-i18n-placeholder="hive_modal.prevzeti_note_placeholder" placeholder="Co ti řekl o včelstvu, jeho vlastnostech, historii…" style="min-height:60px"></textarea>
+      </div>
+    </div>
+
+    <!-- Matka – NOVÝ ÚL (zjednodušeno) -->
+    <div id="queenNewSection">
+      <div style="border-top:1px solid var(--s3);margin:12px 0 14px;position:relative">
+        <span style="position:absolute;top:-9px;left:12px;background:var(--surface);padding:0 8px;font-size:.72rem;color:var(--gold);font-weight:700" data-i18n="hive_modal.queen_new_title">👑 Matka při převzetí</span>
+      </div>
+      <p style="font-size:.75rem;color:var(--dim);margin-bottom:10px" data-i18n="hive_modal.queen_new_info">Matka která přišla s včelstvem. Změny matek v průběhu chovu zaznamenáš přes typ záznamu 👑 Událost matky.</p>
+      <div class="row2">
+        <div class="fg" style="margin-bottom:8px">
+          <label style="font-size:.72rem" data-i18n="hive_modal.queen_year_label">Rok matky <span style="font-weight:400">(dle chovatele)</span></label>
+          <input id="hiveQueenYear" type="number" min="2000" max="2099" placeholder="např. 2024" oninput="updateQueenColor()"/>
+        </div>
+        <div class="fg" style="margin-bottom:8px">
+          <label style="font-size:.72rem" data-i18n="hive_modal.queen_color_label">Barva značení</label>
+          <div id="queenColorDisplay" style="height:38px;border-radius:8px;border:1px solid var(--s3);display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:700;color:#1a1008;background:var(--s2)">–</div>
+        </div>
+      </div>
+      <div class="fg">
+        <label style="font-size:.72rem" data-i18n="hive_modal.queen_lays_label">Klade?</label>
+        <div class="tog-row">
+          <button class="tog-btn ok active" data-qk="ano" onclick="togQueenKlade(this)" data-i18n="queen.lays.ano">🥚 Ano, klade</button>
+          <button class="tog-btn" data-qk="panna" onclick="togQueenKlade(this)" style="border-color:#e8891a" data-i18n="queen.lays.panna">🌸 Panna / čeká</button>
+          <button class="tog-btn" data-qk="neověřeno" onclick="togQueenKlade(this)" data-i18n="queen.lays.nevereno">❓ Neověřeno</button>
+        </div>
+      </div>
+      <div class="fg">
+        <label style="font-size:.72rem" data-i18n="hive_modal.queen_source_label">Odkud víš</label>
+        <div class="tog-row">
+          <button class="tog-btn ok" data-qi="viděl jsem ji" onclick="togQueenInfo(this)" data-i18n="queen.info.videl">👁 Viděl jsem ji</button>
+          <button class="tog-btn active" data-qi="dle chovatele" onclick="togQueenInfo(this)" data-i18n="queen.info.dle_chovatele">🗣 Dle chovatele</button>
+          <button class="tog-btn" data-qi="neznámé" onclick="togQueenInfo(this)" data-i18n="queen.info.nezname">🤷 Neznámé</button>
+        </div>
+      </div>
+      <div class="fg">
+        <label style="font-size:.72rem" data-i18n="hive_modal.queen_marked_label">Značena</label>
+        <div class="tog-row">
+          <button class="tog-btn ok" data-qz="ano" onclick="togQueenMark(this,'znacena')" data-i18n="yn.ano">✓ Ano</button>
+          <button class="tog-btn active" data-qz="ne" onclick="togQueenMark(this,'znacena')" data-i18n="yn.ne">✗ Ne</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Matka – EDITACE (plný profil) -->
+    <div id="queenEditSection" style="display:none">
+      <div style="border-top:1px solid var(--s3);margin:12px 0 14px;position:relative">
+        <span style="position:absolute;top:-9px;left:12px;background:var(--surface);padding:0 8px;font-size:.72rem;color:var(--gold);font-weight:700" data-i18n="hive_modal.queen_edit_title">👑 Profil matky</span>
+      </div>
+      <div class="row2">
+        <div class="fg" style="margin-bottom:8px">
+          <label style="font-size:.72rem" data-i18n="hive_modal.queen_year_label_edit">Rok matky</label>
+          <input id="hiveQueenYearEdit" type="number" min="2000" max="2099" placeholder="např. 2024" oninput="updateQueenColorEdit()"/>
+        </div>
+        <div class="fg" style="margin-bottom:8px">
+          <label style="font-size:.72rem" data-i18n="hive_modal.queen_color_label">Barva značení</label>
+          <div id="queenColorDisplayEdit" style="height:38px;border-radius:8px;border:1px solid var(--s3);display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:700;color:#1a1008;background:var(--s2)">–</div>
+        </div>
+      </div>
+      <div class="fg">
+        <label style="font-size:.72rem" data-i18n="hive_modal.queen_status_label">Stav matky</label>
+        <div class="tog-row">
+          <button class="tog-btn ok active" data-q="přítomna" onclick="togQueenStatus(this)" data-i18n="queen_btn.pritomna">✓ Přítomna</button>
+          <button class="tog-btn" data-q="podezření" onclick="togQueenStatus(this)" style="border-color:#e8891a" data-i18n="queen_btn.podezreni">❓ Podezření</button>
+          <button class="tog-btn" data-q="chybí" onclick="togQueenStatus(this)" style="border-color:var(--danger)" data-i18n="queen_btn.chybi">✗ Chybí</button>
+        </div>
+      </div>
+      <div class="fg">
+        <label style="font-size:.72rem" data-i18n="hive_modal.queen_origin_label">Původ matky</label>
+        <select id="hiveQueenOrigin">
+          <option value="neznámý" data-i18n="queen.origin.nezname">– Neznámý –</option>
+          <option value="přirozená náhrada" data-i18n="queen.origin.prirozena">Přirozená náhrada (supersedura)</option>
+          <option value="po roji" data-i18n="queen.origin.po_roji">Po roji (nová z matečníku)</option>
+          <option value="zavedena" data-i18n="queen.origin.zavedena">Zavedena zvenčí</option>
+          <option value="vlastní odchov" data-i18n="queen.origin.vlastni_odchov">Vlastní odchov</option>
+          <option value="koupena" data-i18n="queen.origin.koupena">Koupena</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label style="font-size:.72rem" data-i18n="hive_modal.queen_breeder_label">Chovatel / prodejce <span style="font-weight:400;color:var(--dim)">(nepovinné)</span></label>
+        <input id="hiveQueenBreeder" type="text" data-i18n-placeholder="hive_modal.queen_breeder_placeholder" placeholder="Jméno nebo kontakt…"/>
+      </div>
+      <div class="row2">
+        <div class="fg">
+          <label style="font-size:.72rem" data-i18n="hive_modal.queen_marked_label">Značena</label>
+          <div class="tog-row">
+            <button class="tog-btn ok" data-qz="ano" onclick="togQueenMark(this,'znacena')" data-i18n="yn.ano">✓ Ano</button>
+            <button class="tog-btn active" data-qz="ne" onclick="togQueenMark(this,'znacena')" data-i18n="yn.ne">✗ Ne</button>
+          </div>
+        </div>
+        <div class="fg">
+          <label style="font-size:.72rem" data-i18n="hive_modal.queen_clipped_label">Ostříhána</label>
+          <div class="tog-row">
+            <button class="tog-btn ok" data-qo="ano" onclick="togQueenMark(this,'ostrizena')" data-i18n="yn.ano">✓ Ano</button>
+            <button class="tog-btn active" data-qo="ne" onclick="togQueenMark(this,'ostrizena')" data-i18n="yn.ne">✗ Ne</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="fg"><label data-i18n="hive_modal.note_label">Poznámka</label><textarea id="hiveNote" placeholder="…"></textarea></div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeModal('hiveModal')" data-i18n="hive_modal.cancel">Zrušit</button>
+      <button class="btn btn-primary" onclick="saveHive()" data-i18n="hive_modal.save">Uložit</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Záznam ══ -->
+<div class="overlay" id="recordModal">
+  <div class="modal">
+    <h3 data-i18n="rec_modal.title">Nový záznam</h3>
+    <div class="fg" id="recHiveGroup">
+      <label data-i18n="rec_modal.hive_label">Úl</label><select id="recHiveSelect"></select>
+    </div>
+    <div class="fg"><label data-i18n="rec_modal.date_label">Datum</label><input id="recDate" type="date"/></div>
+    <div class="fg"><label data-i18n="rec_modal.type_label">Typ záznamu</label></div>
+    <div class="type-grid">
+      <button class="type-btn" data-type="cesno" onclick="setRecType('cesno')"><div class="ti">🚪</div><div class="tl2" data-i18n="rec.cesno">Česno</div></button>
+      <button class="type-btn" data-type="vaha" onclick="setRecType('vaha')"><div class="ti">⚖️</div><div class="tl2" data-i18n="rec.vaha">Váha</div></button>
+      <button class="type-btn" data-type="nadireni" onclick="setRecType('nadireni')"><div class="ti">📦</div><div class="tl2" data-i18n="rec.nadireni">Nadíření</div></button>
+      <button class="type-btn" data-type="sklizen" onclick="setRecType('sklizen')"><div class="ti">🍯</div><div class="tl2" data-i18n="rec.sklizen">Sklizeň</div></button>
+      <button class="type-btn" data-type="krmeni" onclick="setRecType('krmeni')"><div class="ti">🍬</div><div class="tl2" data-i18n="rec.krmeni">Krmení</div></button>
+      <button class="type-btn" data-type="rojeni" onclick="setRecType('rojeni')"><div class="ti">✈️</div><div class="tl2" data-i18n="rec.rojeni">Rojení</div></button>
+      <button class="type-btn" data-type="polstar" onclick="setRecType('polstar')"><div class="ti">🧶</div><div class="tl2" data-i18n="rec.polstar">Polštář</div></button>
+      <button class="type-btn" data-type="otoceni" onclick="setRecType('otoceni')"><div class="ti">↕️</div><div class="tl2" data-i18n="rec.otoceni">Otočení cesty</div></button>
+      <button class="type-btn" data-type="poznamka" onclick="setRecType('poznamka')"><div class="ti">📝</div><div class="tl2" data-i18n="rec.poznamka">Poznámka</div></button>
+      <button class="type-btn" data-type="matka" onclick="setRecType('matka')" style="grid-column:span 3"><div class="ti">👑</div><div class="tl2" data-i18n="rec.matka">Událost matky</div></button>
+    </div>
+
+    <div class="dyn-form" id="df-cesno">
+      <div class="fg"><label data-i18n="rec_modal.cesno_activity">Aktivita česna</label>
+        <div class="tog-row">
+          <button class="tog-btn ok" data-f="aktivita" data-v="vysoká" onclick="togField(this,'aktivita')" data-i18n="cesno_btn.vysoka">🔥 Vysoká</button>
+          <button class="tog-btn" data-f="aktivita" data-v="střední" onclick="togField(this,'aktivita')" data-i18n="cesno_btn.stredni">🙂 Střední</button>
+          <button class="tog-btn" data-f="aktivita" data-v="nízká" onclick="togField(this,'aktivita')" data-i18n="cesno_btn.nizka">😴 Nízká</button>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="fg"><label data-i18n="rec_modal.pollen">Nošení pylu</label>
+          <div class="tog-row">
+            <button class="tog-btn ok" data-f="pyl" data-v="ano" onclick="togField(this,'pyl')" data-i18n="pollen.ano">🌼 Ano</button>
+            <button class="tog-btn" data-f="pyl" data-v="ne" onclick="togField(this,'pyl')" data-i18n="pollen.ne">✗ Ne</button>
+          </div>
+        </div>
+        <div class="fg"><label data-i18n="rec_modal.beard">Vousy (rojení)</label>
+          <div class="tog-row">
+            <button class="tog-btn" data-f="vousy" data-v="ano" onclick="togField(this,'vousy')" style="--amber:#e05a2b" data-i18n="beard.ano">⚠️ Ano</button>
+            <button class="tog-btn ok active" data-f="vousy" data-v="ne" onclick="togField(this,'vousy')" data-i18n="beard.ne">✓ Ne</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dyn-form" id="df-vaha">
+      <div class="fg"><label data-i18n="rec_modal.weight_label">Hmotnost (kg)</label><input id="recKg" type="number" step="0.1" min="0" data-i18n-placeholder="rec_modal.weight_placeholder" placeholder="např. 28.5"/></div>
+    </div>
+
+    <div class="dyn-form" id="df-nadireni">
+      <div class="fg"><label data-i18n="rec_modal.nadir_count">Počet přidávaných nástavků</label><input id="recNadirPocet" type="number" min="1" max="5" value="1"/></div>
+      <p style="font-size:.78rem;color:var(--dim);padding:4px 0" data-i18n="rec_modal.nadir_info">📦 Nástavky budou přidány ke dnu věže (nadíření).</p>
+    </div>
+
+    <div class="dyn-form" id="df-sklizen">
+      <div class="fg"><label data-i18n="rec_modal.harvest_count">Počet sklizených nástavků shora</label><input id="recSklizenPocet" type="number" min="1" max="10" value="1"/></div>
+      <p style="font-size:.78rem;color:var(--dim);padding:4px 0" data-i18n="rec_modal.harvest_info">🍯 Nástavky budou odebrány z vrcholu věže.</p>
+    </div>
+
+    <div class="dyn-form" id="df-krmeni">
+      <div class="fg"><label data-i18n="rec_modal.feed_type">Typ krmiva</label>
+        <select id="recKrmType">
+          <option data-i18n="feed.11">Cukrový roztok 1:1</option><option data-i18n="feed.21">Cukrový roztok 2:1</option>
+          <option data-i18n="feed.testo">Medocukrové těsto</option><option data-i18n="feed.pyl">Pyl / náhrada pylu</option><option data-i18n="feed.jine">Jiné</option>
+        </select>
+      </div>
+      <div class="fg"><label data-i18n="rec_modal.feed_amount">Množství</label><input id="recKrmMn" type="text" data-i18n-placeholder="rec_modal.feed_amount_placeholder" placeholder="např. 2 l, 500 g"/></div>
+    </div>
+
+    <div class="dyn-form" id="df-rojeni">
+      <div class="fg"><label data-i18n="rec_modal.swarm_type">Typ rojení</label>
+        <div class="tog-row">
+          <button class="tog-btn" data-f="rojTyp" data-v="přirozené" onclick="togField(this,'rojTyp')" data-i18n="swarm.prirozene">🌿 Přirozené</button>
+          <button class="tog-btn" data-f="rojTyp" data-v="umělé" onclick="togField(this,'rojTyp')" data-i18n="swarm.umele">✂️ Umělé</button>
+        </div>
+      </div>
+      <div class="fg"><label data-i18n="rec_modal.swarm_dest">Kam (volitelně)</label><input id="recRojKam" type="text" data-i18n-placeholder="rec_modal.swarm_dest_placeholder" placeholder="nový úl č.5, soused…"/></div>
+    </div>
+
+    <div class="dyn-form" id="df-polstar">
+      <div class="fg"><label data-i18n="rec_modal.quilt_state">Stav polštáře</label>
+        <select id="recPolstar">
+          <option value="suchý" data-i18n="quilt.suchy">Suchý ✓</option><option value="vlhký" data-i18n="quilt.vlhky">Vlhký – pozor</option>
+          <option value="plesnivý" data-i18n="quilt.plesnivy">Plesnivý – vyměnit</option><option value="vyměněn" data-i18n="quilt.vymenen">Vyměněn</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="dyn-form" id="df-otoceni">
+      <div style="background:var(--s2);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:.78rem;line-height:1.5;color:var(--dim)" id="pathInfoBox">
+        <strong style="color:var(--text);display:block;margin-bottom:4px" data-i18n="rec_modal.path_info_title">ℹ️ Co je otočení cesty?</strong>
+        <span data-i18n="rec_modal.path_info">Jde o orientaci plástů vůči česnu – otočením boxu o 90° změníš, jak vzduch prochází úlem.</span><br><br>
+        <span style="color:var(--text)" data-i18n="rec_modal.warm_path">🔆 Teplá cesta</span> – <span data-i18n="rec_modal.warm_path_desc">plásty rovnoběžně s česnem. Lépe drží teplo, doporučeno pro podzim a zimu. Warré ji doporučoval jako základní nastavení.</span><br><br>
+        <span style="color:var(--text)" data-i18n="rec_modal.cold_path">❄️ Studená cesta</span> – <span data-i18n="rec_modal.cold_path_desc">plásty kolmo na česno. Lepší ventilace, vhodné pro jaro a léto.</span>
+      </div>
+      <div class="fg"><label data-i18n="rec_modal.path_current">Aktuální nastavení po otočení</label>
+        <div class="tog-row">
+          <button class="tog-btn" data-f="otSmer" data-v="teplá" onclick="togField(this,'otSmer')" data-i18n="path.warm">🔆 Teplá cesta (zima)</button>
+          <button class="tog-btn" data-f="otSmer" data-v="studená" onclick="togField(this,'otSmer')" data-i18n="path.cold">❄️ Studená cesta (léto)</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="dyn-form" id="df-poznamka"></div>
+
+    <div class="dyn-form" id="df-matka">
+      <div class="fg"><label data-i18n="rec_modal.queen_event">Co se stalo s matkou</label>
+        <div class="tog-row" style="flex-wrap:wrap;gap:6px">
+          <button class="tog-btn" data-f="mUdalost" data-v="potvrzena" onclick="togMatkaUdalost(this)" style="flex:none;min-width:48%" data-i18n="matka_btn.potvrzena">✓ Potvrzena přítomnost</button>
+          <button class="tog-btn" data-f="mUdalost" data-v="supersedura" onclick="togMatkaUdalost(this)" style="flex:none;min-width:48%" data-i18n="matka_btn.supersedura">🔄 Supersedura</button>
+          <button class="tog-btn" data-f="mUdalost" data-v="po roji" onclick="togMatkaUdalost(this)" style="flex:none;min-width:48%" data-i18n="matka_btn.po_roji">🐝 Nová po roji</button>
+          <button class="tog-btn" data-f="mUdalost" data-v="zavedena" onclick="togMatkaUdalost(this)" style="flex:none;min-width:48%" data-i18n="matka_btn.zavedena">📥 Zavedena zvenčí</button>
+          <button class="tog-btn" data-f="mUdalost" data-v="koupena" onclick="togMatkaUdalost(this)" style="flex:none;min-width:48%;border-color:var(--gold)" data-i18n="matka_btn.koupena">🛒 Koupena nová matka</button>
+          <button class="tog-btn" data-f="mUdalost" data-v="chybí" onclick="togMatkaUdalost(this)" style="flex:none;min-width:48%;border-color:var(--danger)" data-i18n="matka_btn.chybi">✗ Chybí / mrtvá</button>
+        </div>
+      </div>
+      <!-- Pole pro koupenou matku -->
+      <div id="matkaKoupenaFields" style="display:none">
+        <div class="fg">
+          <label data-i18n="rec_modal.queen_breeder_label">Od koho (chovatel / plemenitba)</label>
+          <input id="recQueenBreeder" type="text" placeholder="např. Plemenitba Novák, Apicentrum…" maxlength="80"/>
+        </div>
+        <div class="fg">
+          <label data-i18n="rec_modal.queen_race_label">Linie / rasa matky</label>
+          <select id="recQueenRace">
+            <option value="" data-i18n="race.none">– nevyplněno –</option>
+            <option value="Krajová (Apis mellifera carnica)" data-i18n="race.carnica">Krajová (Carnica)</option>
+            <option value="Buckfast" data-i18n="race.buckfast">Buckfast</option>
+            <option value="Elgon" data-i18n="race.elgon">Elgon</option>
+            <option value="Italská (Apis mellifera ligustica)" data-i18n="race.ligustica">Italská (Ligustica)</option>
+            <option value="Tmavá (Apis mellifera mellifera)" data-i18n="race.mellifera">Tmavá evropská</option>
+            <option value="Jiná čistá linie" data-i18n="race.other_pure">Jiná čistá linie</option>
+            <option value="Neznámá" data-i18n="race.unknown">Neznámá</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label data-i18n="rec_modal.queen_contact_label">Kontakt na dodavatele (volitelně)</label>
+          <input id="recQueenBreederContact" type="text" placeholder="tel / e-mail / web" maxlength="80"/>
+        </div>
+      </div>
+      <div id="matkaNewQueenFields">
+        <div class="row2">
+          <div class="fg"><label data-i18n="rec_modal.queen_year_label">Rok nové matky</label>
+            <input id="recQueenYear" type="number" min="2000" max="2099" placeholder="2025" oninput="updateRecQueenColor()"/>
+          </div>
+          <div class="fg"><label data-i18n="rec_modal.queen_color_label">Barva značení</label>
+            <div id="recQueenColorDisplay" style="height:38px;border-radius:8px;border:1px solid var(--s3);display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:700;color:#1a1008;background:var(--s2)">–</div>
+          </div>
+        </div>
+        <div class="row2">
+          <div class="fg"><label data-i18n="rec_modal.queen_marked_label">Značena</label>
+            <div class="tog-row">
+              <button class="tog-btn ok" data-f="mZnacena" data-v="ano" onclick="togField(this,'mZnacena')" data-i18n="yn.ano">✓ Ano</button>
+              <button class="tog-btn active" data-f="mZnacena" data-v="ne" onclick="togField(this,'mZnacena')" data-i18n="yn.ne">✗ Ne</button>
+            </div>
+          </div>
+          <div class="fg"><label data-i18n="rec_modal.queen_clipped_label">Ostříhána</label>
+            <div class="tog-row">
+              <button class="tog-btn ok" data-f="mOstrizena" data-v="ano" onclick="togField(this,'mOstrizena')" data-i18n="yn.ano">✓ Ano</button>
+              <button class="tog-btn active" data-f="mOstrizena" data-v="ne" onclick="togField(this,'mOstrizena')" data-i18n="yn.ne">✗ Ne</button>
+            </div>
+          </div>
+        </div>
+        <p style="font-size:.75rem;color:var(--amber);padding:2px 0" data-i18n="rec_modal.queen_update_note">💡 Uložením se automaticky aktualizuje profil matky na tomto úlu.</p>
+      </div>
+    </div>
+
+    <div class="fg" style="margin-top:8px"><label data-i18n="rec_modal.notes_label">Poznámky</label><textarea id="recNotes" data-i18n-placeholder="rec_modal.notes_placeholder" placeholder="Volitelné poznámky…"></textarea></div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeModal('recordModal')" data-i18n="rec_modal.cancel">Zrušit</button>
+      <button class="btn btn-primary" onclick="saveRecord()" data-i18n="rec_modal.save">Uložit</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Historie úlu ══ -->
+<div class="overlay" id="historyModal">
+  <div class="modal" style="padding-bottom:40px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <h3 style="margin:0" id="histTitle">📜 Historie úlu</h3>
+      <button class="back-btn" onclick="closeModal('historyModal')" style="width:28px;height:28px;font-size:.9rem" data-i18n="history.close">✕</button>
+    </div>
+
+    <!-- Stat boxy -->
+    <div class="stats-row" id="histStats" style="margin-bottom:12px"></div>
+
+    <!-- Původ & věk -->
+    <div id="histOriginBox" style="background:var(--s2);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:.82rem;display:none">
+      <div style="font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px" data-i18n="hist.origin">Původ včelstva</div>
+      <div id="histOriginText" style="color:var(--text)"></div>
+    </div>
+
+    <!-- Váhová křivka -->
+    <div id="histChartBox" style="background:var(--s2);border-radius:10px;padding:12px 14px;margin-bottom:12px;display:none">
+      <div style="font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px" data-i18n="hist.weight">⚖️ Vývoj váhy</div>
+      <div id="histChartArea"></div>
+    </div>
+
+    <!-- Pohyby nástavků -->
+    <div style="font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px" data-i18n="hist.box_moves">📦 Pohyby nástavků</div>
+    <div id="histBoxMoves" style="display:flex;flex-direction:column;gap:5px;margin-bottom:14px"></div>
+
+    <!-- Klíčové události -->
+    <div style="font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px" data-i18n="hist.key_events">📋 Klíčové události</div>
+    <div id="histEvents" style="display:flex;flex-direction:column;gap:5px"></div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Stanoviště ══ -->
+<div class="overlay" id="stanModal">
+  <div class="modal">
+    <h3 id="stanModalTitle" data-i18n="stan_modal.new">Nové stanoviště</h3>
+    <div class="row2">
+      <div class="fg"><label data-i18n="stan_modal.num_label">Číslo stanoviště</label><input id="stanNum" type="text" placeholder="1, A, 12b" maxlength="10"/></div>
+      <div class="fg"><label data-i18n="stan_modal.name_label">Název</label><input id="stanName" type="text" placeholder="Zahrada u domu" maxlength="60"/></div>
+    </div>
+    <div class="fg"><label data-i18n="stan_modal.addr_label">Adresa / popis místa</label><input id="stanAddr" type="text" placeholder="Nová 5, Praha / u lesa" maxlength="100"/></div>
+    <div class="fg"><label data-i18n="stan_modal.gps_label">GPS (volitelně)</label><input id="stanGps" type="text" placeholder="50.0755, 14.4378" maxlength="40"/></div>
+    <div class="fg"><label data-i18n="stan_modal.note_label">Poznámka</label><textarea id="stanNote" placeholder="…"></textarea></div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeModal('stanModal')" data-i18n="stan_modal.cancel">Zrušit</button>
+      <button class="btn btn-primary" onclick="saveStan()" data-i18n="stan_modal.save">Uložit</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Úkol ══ -->
+<div class="overlay" id="taskModal">
+  <div class="modal">
+    <h3 data-i18n="task_modal.title">Nový úkol</h3>
+    <div class="fg"><label data-i18n="task_modal.task_label">Úkol</label><input id="taskTitle" type="text" data-i18n-placeholder="task_modal.task_placeholder" placeholder="např. Léčit varroázu…" maxlength="80"/></div>
+    <div class="row2">
+      <div class="fg"><label data-i18n="task_modal.hive_label">Úl (volitelně)</label><select id="taskHive"><option value="" data-i18n="task_modal.hive_all">– Všechny –</option></select></div>
+      <div class="fg"><label data-i18n="task_modal.date_label">Termín</label><input id="taskDate" type="date"/></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeModal('taskModal')" data-i18n="task_modal.cancel">Zrušit</button>
+      <button class="btn btn-primary" onclick="saveTask()" data-i18n="task_modal.save">Uložit</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Profil ══ -->
+<div class="overlay" id="profileModal">
+  <div class="modal">
+    <h3 data-i18n="profile.title">👤 Profil včelaře</h3>
+    <div class="fg"><label data-i18n="profile.type_label">Typ subjektu</label>
+      <div class="tog-row" id="profTypRow">
+        <button class="tog-btn active" data-t="osoba" onclick="setProfTyp('osoba')" data-i18n="profile.person">👤 Fyzická osoba</button>
+        <button class="tog-btn" data-t="firma" onclick="setProfTyp('firma')" data-i18n="profile.company">🏢 Firma</button>
+      </div>
+    </div>
+    <div class="fg" id="profFirmaGroup" style="display:none">
+      <label data-i18n="profile.company_name_label">Název firmy</label><input id="profFirma" type="text" placeholder="Novák Včelařství s.r.o." maxlength="100"/>
+    </div>
+    <div class="row2">
+      <div class="fg"><label id="profJmenoLbl" data-i18n="profile.first_name_label">Jméno</label><input id="profJmeno" type="text" placeholder="Jan" maxlength="50"/></div>
+      <div class="fg"><label id="profPrijmeniLbl" data-i18n="profile.last_name_label">Příjmení</label><input id="profPrijmeni" type="text" placeholder="Novák" maxlength="50"/></div>
+    </div>
+    <div class="row2">
+      <div class="fg"><label data-i18n="profile.reg_label">Reg. číslo včelaře</label><input id="profRegCislo" type="text" placeholder="CZ-XXX-XXXXX" maxlength="30"/></div>
+      <div class="fg"><label id="profRodLbl" data-i18n="profile.birth_label">Rodné číslo</label><input id="profRodCislo" type="text" placeholder="XXXXXX/XXXX" maxlength="20"/></div>
+    </div>
+    <div class="fg"><label data-i18n="profile.addr_label">Adresa</label><input id="profAdresa" type="text" placeholder="Ulice 1, 123 45 Město" maxlength="100"/></div>
+    <div class="row2">
+      <div class="fg"><label data-i18n="profile.phone_label">Telefon</label><input id="profTelefon" type="tel" placeholder="+420 123 456 789" maxlength="20"/></div>
+      <div class="fg"><label data-i18n="profile.email_label">E-mail</label><input id="profEmail" type="email" placeholder="jan@novak.cz" maxlength="80"/></div>
+    </div>
+    <div class="form-actions" style="flex-wrap:wrap;gap:8px">
+      <button class="btn btn-ghost" onclick="closeModal('profileModal')" data-i18n="profile.close">Zavřít</button>
+      <button class="btn btn-primary" onclick="saveProfile()" data-i18n="profile.save">Uložit</button>
+      <button class="btn" style="background:#2a4018;color:var(--ok);flex:none" onclick="generateReport()" data-i18n="profile.report">📄 Report</button>
+    </div>
+    <div style="border-top:1px solid var(--s3);margin-top:14px;padding-top:14px">
+      <p style="font-size:.72rem;color:var(--dim);margin-bottom:8px" data-i18n="profile.lang_label">Jazyk aplikace</p>
+      <div class="tog-row">
+        <button class="tog-btn active" data-lang-btn="cs" onclick="setLanguage('cs')">🇨🇿 Česky</button>
+        <button class="tog-btn" data-lang-btn="en" onclick="setLanguage('en')">🇬🇧 English</button>
+        <button class="tog-btn" data-lang-btn="de" onclick="setLanguage('de')">🇩🇪 Deutsch</button>
+      </div>
+    </div>
+    <div style="border-top:1px solid var(--s3);margin-top:14px;padding-top:14px">
+      <p style="font-size:.72rem;color:var(--dim);margin-bottom:10px" data-i18n="profile.backup_info">📦 Záloha dat — ulož si kopii nebo přenes na jiné zařízení</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" style="flex:1;background:var(--s2);color:var(--text)" onclick="exportData()" data-i18n="profile.export">📤 Exportovat data</button>
+        <button class="btn" style="flex:1;background:var(--s2);color:var(--text)" onclick="document.getElementById('importFileInput').click()" data-i18n="profile.import">📥 Importovat data</button>
+      </div>
+      <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importData(this)"/>
+    </div>
+    <div style="border-top:1px solid var(--s3);margin-top:14px;padding-top:14px">
+      <p style="font-size:.72rem;color:var(--dim);margin-bottom:8px" id="authEmailDisplay"></p>
+      <button class="btn btn-danger btn-sm" onclick="doLogout()" style="width:100%">🚪 Odhlásit se</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════
+//  SUPABASE INIT
+// ════════════════════════════
+const SUPA_URL = 'https://vsetzrvzyckjlapubfgu.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzZXR6cnZ6eWNramxhcHViZmd1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NDcwMTMsImV4cCI6MjA5MDAyMzAxM30.OykXL9Ibs4pPko2wQGRQUhuCUS8D6N7Wg6kd3mNzbTE';
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+let currentUser = null;
+
+function showApp(user){
+  currentUser = user;
+  document.getElementById('loginScreen').classList.add('hidden');
+  const el = document.getElementById('authEmailDisplay');
+  if(el) el.textContent = '🔑 ' + (user?.email || '');
+}
+function showLogin(){
+  currentUser = null;
+  _state = { hives:[], records:[], tasks:[], stanoviste:[] };
+  profile = {};
+  document.getElementById('loginScreen').classList.remove('hidden');
+}
+
+function switchAuthTab(tab){
+  document.getElementById('authFormLogin').style.display  = tab==='login'    ? '' : 'none';
+  document.getElementById('authFormRegister').style.display = tab==='register' ? '' : 'none';
+  document.getElementById('tabLogin').classList.toggle('active', tab==='login');
+  document.getElementById('tabRegister').classList.toggle('active', tab==='register');
+  document.getElementById('loginErr').textContent = '';
+  document.getElementById('regErr').textContent = '';
+  document.getElementById('regOk').textContent = '';
+}
+
+async function doLogin(){
+  const email    = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errEl    = document.getElementById('loginErr');
+  const btn      = document.getElementById('loginBtn');
+  if(!email || !password){ errEl.textContent = 'Vyplň e-mail a heslo.'; return; }
+  btn.disabled = true; btn.textContent = 'Přihlašuji…';
+  const {error} = await supa.auth.signInWithPassword({email, password});
+  btn.disabled = false; btn.textContent = 'Přihlásit se';
+  if(error) errEl.textContent = _authErrMsg(error);
+}
+
+async function doRegister(){
+  const email    = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const password2= document.getElementById('regPassword2').value;
+  const errEl    = document.getElementById('regErr');
+  const okEl     = document.getElementById('regOk');
+  const btn      = document.getElementById('regBtn');
+  errEl.textContent = ''; okEl.textContent = '';
+  if(!email)              { errEl.textContent = 'Vyplň e-mail.'; return; }
+  if(password.length < 6) { errEl.textContent = 'Heslo musí mít alespoň 6 znaků.'; return; }
+  if(password !== password2){ errEl.textContent = 'Hesla se neshodují.'; return; }
+  btn.disabled = true; btn.textContent = 'Vytvářím účet…';
+  const {error} = await supa.auth.signUp({email, password, options:{emailRedirectTo: window.location.href}});
+  btn.disabled = false; btn.textContent = 'Vytvořit účet';
+  if(error) errEl.textContent = _authErrMsg(error);
+  else okEl.textContent = 'Účet vytvořen! Zkontroluj e-mail pro potvrzení, nebo se přihlas.';
+}
+
+async function doLogout(){
+  await supa.auth.signOut();
+  currentUser = null;
+  closeModal('profileModal');
+}
+
+function _authErrMsg(err){
+  const msg = err?.message || '';
+  if(msg.includes('Invalid login')) return 'Nesprávný e-mail nebo heslo.';
+  if(msg.includes('Email not confirmed')) return 'E-mail není potvrzen. Zkontroluj schránku.';
+  if(msg.includes('already registered')) return 'Tento e-mail je již zaregistrován.';
+  if(msg.includes('rate limit')) return 'Příliš mnoho pokusů, zkus to za chvíli.';
+  return msg || 'Chyba přihlášení.';
+}
+
+// ════════════════════════════
+//  TRANSLATIONS
+// ════════════════════════════
+const TRANSLATIONS={
+  cs:{
+    // App
+    'app.subtitle':'Správa včelstev',
+    // Nav
+    'nav.dash':'Přehled',
+    'nav.hives':'Úly',
+    'nav.stan':'Stanoviště',
+    'nav.tasks':'Úkoly',
+    // Dashboard
+    'dash.colonies':'Včelstev',
+    'dash.boxes_total':'Nástavků celkem',
+    'dash.apiaries':'Stanovišť',
+    'dash.open_tasks':'Otevřené úkoly',
+    'dash.recent':'Poslední záznamy',
+    'dash.empty':'Zatím žádné záznamy.',
+    // Hive list
+    'hives.title':'Moje úly',
+    'hives.add':'Přidat úl',
+    'hives.no_record':'Žádný záznam',
+    'hives.today':'Záznam dnes',
+    'hives.days_ago':'Před {n} dny',
+    // Detail
+    'detail.records':'Záznamy',
+    'detail.boxes':'Nástavky',
+    'detail.days_since':'Dní od záznamu',
+    'detail.tower_title':'Vizuální věž nástavků',
+    'detail.weight_title':'Vývoj váhy (kg)',
+    'detail.timeline':'Timeline',
+    'detail.edit':'Upravit',
+    'detail.delete':'Smazat',
+    'detail.queen_none':'👑 Matka: neevidována – přidej v Upravit nebo záznamu',
+    'detail.queen_old':'⚠️ Stará',
+    'detail.queen_marked':'· značena',
+    'detail.queen_clipped':'· ostříhána',
+    'detail.queen_unknown_status':'neznámý stav',
+    'detail.origin_prefix':'Původ: ',
+    'detail.origin_from_hive':'z úlu: ',
+    'detail.origin_place':'místo: ',
+    'detail.age_year_1':'{n} rok',
+    'detail.age_year_24':'{n} roky',
+    'detail.age_year_5':'{n} let',
+    'detail.no_records':'Žádné záznamy. Přidej první!',
+    // Tower
+    'tower.top':'🍯 Horní – ke sklizni',
+    'tower.bottom':'📦 Spodní – nejnovější (nadir)',
+    'tower.middle':'Nástavek',
+    'tower.empty':'Žádné nástavky — přidej nadíření nebo vlož počáteční počet při zakládání úlu.',
+    // History modal
+    'hist.title_suffix':'– Historie',
+    'hist.age':'Věk úlu',
+    'hist.harvested':'Sklizeno nástavků',
+    'hist.swarms':'Rojení',
+    'hist.feedings':'Krmení',
+    'hist.nadireno':'Nadírováno',
+    'hist.records':'Záznamy',
+    'hist.weight':'⚖️ Vývoj váhy',
+    'hist.box_moves':'📦 Pohyby nástavků',
+    'hist.key_events':'📋 Klíčové události',
+    'hist.origin':'Původ včelstva',
+    'hist.no_moves':'Žádné pohyby nástavků.',
+    'hist.no_events':'Žádné klíčové události.',
+    'hist.acquired':'· získáno ',
+    'hist.move_add':'+{n} nástavek ke dnu',
+    'hist.move_remove':'−{n} nástavek ze vrchu (sklizeň)',
+    'hist.boxes_count':'{n} nástavků',
+    'hist.empty_boxes':'prázdno',
+    // Apiaries
+    'stan.title':'Stanoviště',
+    'stan.empty':'Žádná stanoviště. Přidej první.',
+    'stan.no_hives':'Žádné úly',
+    'stan.num_prefix':'č. ',
+    'stan.edit':'Upravit',
+    'stan.delete':'Smazat',
+    // Tasks
+    'tasks.title':'Úkoly & připomínky',
+    'tasks.empty':'Žádné úkoly!',
+    // Record types
+    'rec.cesno':'Pozorování česna',
+    'rec.vaha':'Váha',
+    'rec.nadireni':'Nadíření',
+    'rec.sklizen':'Sklizeň',
+    'rec.krmeni':'Krmení',
+    'rec.rojeni':'Rojení',
+    'rec.polstar':'Polštář',
+    'rec.otoceni':'Otočení cesty',
+    'rec.poznamka':'Poznámka',
+    'rec.matka':'Událost matky',
+    'rec.prevzeti':'Převzetí včelstva',
+    'rec.default':'Záznam',
+    // Record summary labels
+    'sum.aktivita':'aktivita: ',
+    'sum.pyl':'pyl: ',
+    'sum.vousy_warn':'⚠️ vousy',
+    'sum.boxes_added':'+{n} nástavek/ků přidán ke dnu',
+    'sum.boxes_harvested':'{n} nástavek/ků sklizeno shora',
+    'sum.sila':'síla: {n}/5',
+    'sum.zdrav_list':'zdravotní list: ',
+    'sum.varroa_treated':'varroáza léčena: ',
+    'sum.from':'od: ',
+    'sum.queen_confirmed':'✓ Potvrzena přítomnost',
+    'sum.queen_supersedura':'🔄 Supersedura',
+    'sum.queen_after_swarm':'🐝 Nová po roji',
+    'sum.queen_introduced':'📥 Zavedena',
+    'sum.queen_purchased':'🛒 Koupena nová matka',
+    'sum.queen_missing':'✗ Chybí / mrtvá',
+    'sum.queen_marked':'značena',
+    'sum.queen_clipped':'ostříhána',
+    'sum.queen_year':'rok ',
+    // Plurals
+    'nastavek_1':'{n} nástavek',
+    'nastavek_24':'{n} nástavky',
+    'nastavek_5':'{n} nástavků',
+    'ul_1':'{n} úl',
+    'ul_24':'{n} úly',
+    'ul_5':'{n} úlů',
+    'zaznam_1':'{n} záznam',
+    'zaznam_24':'{n} záznamy',
+    'zaznam_5':'{n} záznamů',
+    'ukol_1':'{n} úkol',
+    'ukol_24':'{n} úkoly',
+    'ukol_5':'{n} úkolů',
+    'vcelstvo_1':'{n} včelstvo',
+    'vcelstvo_24':'{n} včelstva',
+    'vcelstvo_5':'{n} včelstev',
+    // Queen colors
+    'queen.color.white':'Bílá',
+    'queen.color.yellow':'Žlutá',
+    'queen.color.red':'Červená',
+    'queen.color.green':'Zelená',
+    'queen.color.blue':'Modrá',
+    // Cesno activity
+    'cesno.klidne':'klidné',
+    'cesno.normalni':'normální',
+    'cesno.zvysene':'zvýšené',
+    'cesno.rojove':'rojové',
+    'cesno.prazdne':'prázdné',
+    // Queen status
+    'queen.status.pritomna':'přítomna',
+    'queen.status.podezreni':'podezření',
+    'queen.status.chybi':'chybí',
+    // Queen origin
+    'queen.origin.nezname':'neznámý',
+    'queen.origin.prirozena':'přirozená náhrada',
+    'queen.origin.po_roji':'po roji',
+    'queen.origin.zavedena':'zavedena',
+    'queen.origin.vlastni_odchov':'vlastní odchov',
+    'queen.origin.koupena':'koupena',
+    // Origin types
+    'origin.oddelek':'✂️ Vlastní oddělek',
+    'origin.roj-vlastni':'🐝 Vlastní roj',
+    'origin.roj-divoky':'🌿 Divoký roj',
+    'origin.chovatel':'🤝 Od chovatele',
+    'origin.koupeno':'🛒 Koupeno',
+    'origin.jine':'📝 Jiné',
+    // Hive modal
+    'hive_modal.new':'Nový úl',
+    'hive_modal.edit':'Upravit úl',
+    'hive_modal.name_label':'Název úlu',
+    'hive_modal.name_placeholder':'např. Lípa, Úl č.1…',
+    'hive_modal.type_label':'Typ úlu',
+    'hive_modal.status_label':'Stav',
+    'hive_modal.stan_label':'Stanoviště',
+    'hive_modal.stan_none':'– Bez stanoviště –',
+    'hive_modal.init_boxes_label':'Počáteční počet nástavků',
+    'hive_modal.origin_label':'Původ včelstva',
+    'hive_modal.acq_date_label':'Datum získání (volitelně)',
+    'hive_modal.src_hive_label':'Zdrojový úl',
+    'hive_modal.src_hive_placeholder':'– vybrat –',
+    'hive_modal.breeder_label':'Jméno chovatele',
+    'hive_modal.seller_label':'Jméno prodejce / chovatelské stanice',
+    'hive_modal.breeder_contact_placeholder':'telefon / e-mail (volitelně)',
+    'hive_modal.place_label':'Místo nálezu',
+    'hive_modal.place_placeholder':'např. park u kostela, les Borová…',
+    'hive_modal.other_label':'Popis původu',
+    'hive_modal.prevzeti_title':'📋 Stav při převzetí',
+    'hive_modal.sila_label':'Síla včelstva',
+    'hive_modal.health_cert_label':'Zdravotní list doložen',
+    'hive_modal.varroa_label':'Poslední léčení varroázy (dle sdělení chovatele)',
+    'hive_modal.prevzeti_note_label':'Poznámka od chovatele / prodejce',
+    'hive_modal.prevzeti_note_placeholder':'Co ti řekl o včelstvu, jeho vlastnostech, historii…',
+    'hive_modal.queen_new_title':'👑 Matka při převzetí',
+    'hive_modal.queen_new_info':'Matka která přišla s včelstvem. Změny matek v průběhu chovu zaznamenáš přes typ záznamu 👑 Událost matky.',
+    'hive_modal.queen_year_label':'Rok matky (dle chovatele)',
+    'hive_modal.queen_color_label':'Barva značení',
+    'hive_modal.queen_lays_label':'Klade?',
+    'hive_modal.queen_source_label':'Odkud víš',
+    'hive_modal.queen_marked_label':'Značena',
+    'hive_modal.queen_clipped_label':'Ostříhána',
+    'hive_modal.queen_edit_title':'👑 Profil matky',
+    'hive_modal.queen_year_label_edit':'Rok matky',
+    'hive_modal.queen_status_label':'Stav matky',
+    'hive_modal.queen_origin_label':'Původ matky',
+    'hive_modal.queen_breeder_label':'Chovatel / prodejce (nepovinné)',
+    'hive_modal.queen_breeder_placeholder':'Jméno nebo kontakt…',
+    'hive_modal.note_label':'Poznámka',
+    'hive_modal.cancel':'Zrušit',
+    'hive_modal.save':'Uložit',
+    // Record modal
+    'rec_modal.title':'Nový záznam',
+    'rec_modal.hive_label':'Úl',
+    'rec_modal.date_label':'Datum',
+    'rec_modal.type_label':'Typ záznamu',
+    'rec_modal.notes_label':'Poznámky',
+    'rec_modal.notes_placeholder':'Volitelné poznámky…',
+    'rec_modal.cancel':'Zrušit',
+    'rec_modal.save':'Uložit',
+    'rec_modal.cesno_activity':'Aktivita česna',
+    'rec_modal.pollen':'Nošení pylu',
+    'rec_modal.beard':'Vousy (rojení)',
+    'rec_modal.weight_label':'Hmotnost (kg)',
+    'rec_modal.weight_placeholder':'např. 28.5',
+    'rec_modal.nadir_count':'Počet přidávaných nástavků',
+    'rec_modal.nadir_info':'📦 Nástavky budou přidány ke dnu věže (nadíření).',
+    'rec_modal.harvest_count':'Počet sklizených nástavků shora',
+    'rec_modal.harvest_info':'🍯 Nástavky budou odebrány z vrcholu věže.',
+    'rec_modal.feed_type':'Typ krmiva',
+    'rec_modal.feed_amount':'Množství',
+    'rec_modal.feed_amount_placeholder':'např. 2 l, 500 g',
+    'rec_modal.swarm_type':'Typ rojení',
+    'rec_modal.swarm_dest':'Kam (volitelně)',
+    'rec_modal.swarm_dest_placeholder':'nový úl č.5, soused…',
+    'rec_modal.quilt_state':'Stav polštáře',
+    'rec_modal.path_info_title':'ℹ️ Co je otočení cesty?',
+    'rec_modal.path_info':'Jde o orientaci plástů vůči česnu – otočením boxu o 90° změníš, jak vzduch prochází úlem.',
+    'rec_modal.warm_path':'🔆 Teplá cesta',
+    'rec_modal.warm_path_desc':'plásty rovnoběžně s česnem. Lépe drží teplo, doporučeno pro podzim a zimu. Warré ji doporučoval jako základní nastavení.',
+    'rec_modal.cold_path':'❄️ Studená cesta',
+    'rec_modal.cold_path_desc':'plásty kolmo na česno. Lepší ventilace, vhodné pro jaro a léto.',
+    'rec_modal.path_current':'Aktuální nastavení po otočení',
+    'rec_modal.queen_event':'Co se stalo s matkou',
+    'rec_modal.queen_confirmed':'✓ Potvrzena přítomnost',
+    'rec_modal.queen_supersedura':'🔄 Supersedura',
+    'rec_modal.queen_after_swarm':'🐝 Nová po roji',
+    'rec_modal.queen_introduced':'📥 Zavedena zvenčí',
+    'rec_modal.queen_purchased':'🛒 Koupena nová matka',
+    'rec_modal.queen_missing':'✗ Chybí / mrtvá',
+    'rec_modal.queen_breeder_label':'Od koho (chovatel / plemenitba)',
+    'rec_modal.queen_race_label':'Linie / rasa matky',
+    'rec_modal.queen_contact_label':'Kontakt na dodavatele (volitelně)',
+    'rec_modal.queen_year_label':'Rok nové matky',
+    'rec_modal.queen_color_label':'Barva značení',
+    'rec_modal.queen_marked_label':'Značena',
+    'rec_modal.queen_clipped_label':'Ostříhána',
+    'rec_modal.queen_update_note':'💡 Uložením se automaticky aktualizuje profil matky na tomto úlu.',
+    // Stan modal
+    'stan_modal.new':'Nové stanoviště',
+    'stan_modal.edit':'Upravit stanoviště',
+    'stan_modal.num_label':'Číslo stanoviště',
+    'stan_modal.name_label':'Název',
+    'stan_modal.addr_label':'Adresa / popis místa',
+    'stan_modal.gps_label':'GPS (volitelně)',
+    'stan_modal.note_label':'Poznámka',
+    'stan_modal.cancel':'Zrušit',
+    'stan_modal.save':'Uložit',
+    'stan_modal.default_name':'Stanoviště ',
+    // Task modal
+    'task_modal.title':'Nový úkol',
+    'task_modal.task_label':'Úkol',
+    'task_modal.task_placeholder':'např. Léčit varroázu…',
+    'task_modal.hive_label':'Úl (volitelně)',
+    'task_modal.hive_all':'– Všechny –',
+    'task_modal.date_label':'Termín',
+    'task_modal.cancel':'Zrušit',
+    'task_modal.save':'Uložit',
+    // Profile modal
+    'profile.title':'👤 Profil včelaře',
+    'profile.type_label':'Typ subjektu',
+    'profile.person':'👤 Fyzická osoba',
+    'profile.company':'🏢 Firma',
+    'profile.company_name_label':'Název firmy',
+    'profile.first_name_label':'Jméno',
+    'profile.first_name_resp':'Jméno odpovědné osoby',
+    'profile.last_name_label':'Příjmení',
+    'profile.last_name_resp':'Příjmení odpovědné osoby',
+    'profile.reg_label':'Reg. číslo včelaře',
+    'profile.birth_label':'Rodné číslo',
+    'profile.ico_label':'IČO',
+    'profile.addr_label':'Adresa',
+    'profile.phone_label':'Telefon',
+    'profile.email_label':'E-mail',
+    'profile.close':'Zavřít',
+    'profile.save':'Uložit',
+    'profile.report':'📄 Report',
+    'profile.backup_info':'📦 Záloha dat — ulož si kopii nebo přenes na jiné zařízení',
+    'profile.export':'📤 Exportovat data',
+    'profile.import':'📥 Importovat data',
+    'profile.lang_label':'Jazyk aplikace',
+    // History modal
+    'history.title_prefix':'📜 ',
+    'history.close':'✕',
+    // Common buttons
+    'btn.cancel':'Zrušit',
+    'btn.save':'Uložit',
+    'btn.close':'Zavřít',
+    'btn.edit':'Upravit',
+    'btn.delete':'Smazat',
+    'btn.yes':'Ano',
+    'btn.no':'Ne',
+    // Alerts
+    'alert.name_required':'Zadej název.',
+    'alert.hive_required':'Vyber úl.',
+    'alert.type_required':'Vyber typ záznamu.',
+    'alert.date_required':'Zadej datum.',
+    'alert.weight_required':'Zadej hmotnost.',
+    'alert.task_required':'Zadej úkol.',
+    'alert.stan_required':'Zadej číslo nebo název.',
+    'alert.import_invalid':'Soubor není platná záloha Včelníku.',
+    'alert.import_ok':'Import proběhl úspěšně ✓',
+    'alert.import_error':'Chyba při čtení souboru.',
+    'confirm.delete_hive':'Smazat úl „{name}" i se všemi záznamy?',
+    'confirm.delete_record':'Smazat tento záznam?',
+    'confirm.delete_stan':'Smazat stanoviště „{name}"?',
+    'confirm.import':'Importovat zálohu z {date}?\n\nObsahuje: {hives} úlů, {records} záznamů.\n\n⚠️ Stávající data budou nahrazena.',
+    'confirm.import_unknown_date':'neznámého data',
+    // Hive status options
+    'hstatus.aktivni':'Aktivní',
+    'hstatus.zimovani':'Zimování',
+    'hstatus.bez_matky':'Bez matky',
+    'hstatus.rojeni':'Rojení',
+    'hstatus.slabe':'Slabé',
+    // Hive type options
+    'htype.warre':'Warré (lidový)',
+    'htype.langstroth':'Langstroth',
+    'htype.dadant':'Dadant',
+    'htype.nastavkovy':'Nástavkový',
+    'htype.jiny':'Jiný',
+    // Feed types
+    'feed.11':'Cukrový roztok 1:1',
+    'feed.21':'Cukrový roztok 2:1',
+    'feed.testo':'Medocukrové těsto',
+    'feed.pyl':'Pyl / náhrada pylu',
+    'feed.jine':'Jiné',
+    // Quilt states
+    'quilt.suchy':'Suchý ✓',
+    'quilt.vlhky':'Vlhký – pozor',
+    'quilt.plesnivy':'Plesnivý – vyměnit',
+    'quilt.vymenen':'Vyměněn',
+    // Queen race
+    'race.none':'– nevyplněno –',
+    'race.carnica':'Krajová (Carnica)',
+    'race.buckfast':'Buckfast',
+    'race.elgon':'Elgon',
+    'race.ligustica':'Italská (Ligustica)',
+    'race.mellifera':'Tmavá evropská',
+    'race.other_pure':'Jiná čistá linie',
+    'race.unknown':'Neznámá',
+    // Queen klade
+    'queen.lays.ano':'🥚 Ano, klade',
+    'queen.lays.panna':'🌸 Panna / čeká',
+    'queen.lays.nevereno':'❓ Neověřeno',
+    // Queen info source
+    'queen.info.videl':'👁 Viděl jsem ji',
+    'queen.info.dle_chovatele':'🗣 Dle chovatele',
+    'queen.info.nezname':'🤷 Neznámé',
+    // Origin buttons
+    'origin_btn.oddelek':'Vlastní oddělek',
+    'origin_btn.roj_vlastni':'Vlastní roj',
+    'origin_btn.roj_divoky':'Divoký roj',
+    'origin_btn.chovatel':'Od chovatele',
+    'origin_btn.koupeno':'Koupeno',
+    'origin_btn.jine':'Jiné',
+    // Health cert
+    'zdrav.ano':'✓ Ano',
+    'zdrav.ne':'✗ Ne',
+    'zdrav.na':'– N/A',
+    // Cesno activity buttons
+    'cesno_btn.vysoka':'🔥 Vysoká',
+    'cesno_btn.stredni':'🙂 Střední',
+    'cesno_btn.nizka':'😴 Nízká',
+    // Pollen
+    'pollen.ano':'🌼 Ano',
+    'pollen.ne':'✗ Ne',
+    // Beard
+    'beard.ano':'⚠️ Ano',
+    'beard.ne':'✓ Ne',
+    // Swarm type
+    'swarm.prirozene':'🌿 Přirozené',
+    'swarm.umele':'✂️ Umělé',
+    // Path rotation
+    'path.warm':'🔆 Teplá cesta (zima)',
+    'path.cold':'❄️ Studená cesta (léto)',
+    // Yes/No generic
+    'yn.ano':'✓ Ano',
+    'yn.ne':'✗ Ne',
+    // Queen events (buttons in record modal)
+    'matka_btn.potvrzena':'✓ Potvrzena přítomnost',
+    'matka_btn.supersedura':'🔄 Supersedura',
+    'matka_btn.po_roji':'🐝 Nová po roji',
+    'matka_btn.zavedena':'📥 Zavedena zvenčí',
+    'matka_btn.koupena':'🛒 Koupena nová matka',
+    'matka_btn.chybi':'✗ Chybí / mrtvá',
+    // Queen status buttons (edit modal)
+    'queen_btn.pritomna':'✓ Přítomna',
+    'queen_btn.podezreni':'❓ Podezření',
+    'queen_btn.chybi':'✗ Chybí',
+    // Report
+    'report.back':'← Zpět do aplikace',
+    'report.print':'🖨️ Tisknout / PDF',
+    'report.title':'🐝 Hlášení o stavu včelstev',
+    'report.date_prefix':'ke dni ',
+    'report.breeder_info':'Údaje o chovateli',
+    'report.company_name':'Název firmy',
+    'report.name_person':'Jméno a příjmení',
+    'report.name_resp':'Odpovědná osoba',
+    'report.reg_num':'Registrační číslo včelaře',
+    'report.birth':'Rodné číslo',
+    'report.ico':'IČO',
+    'report.address':'Adresa',
+    'report.phone':'Telefon',
+    'report.email':'E-mail',
+    'report.total':'Celkem stanovišť: {apiaries} | Celkem včelstev: {hives}',
+    'report.col_num':'#',
+    'report.col_name':'Název úlu',
+    'report.col_type':'Typ',
+    'report.col_status':'Stav',
+    'report.col_origin':'Původ',
+    'report.col_last':'Poslední záznam',
+    'report.no_hives':'Žádná včelstva',
+    'report.no_stan':'Bez stanoviště',
+    'report.stan_prefix':'Stanoviště č. ',
+    'report.days_suffix':' dní',
+    'report.generated':'Vygenerováno aplikací Včelník · ',
+    'report.signature':'Podpis chovatele',
+    // fillSelect
+    'select.no_stan':'– Bez stanoviště –',
+    'select.all_hives':'– Všechny –',
+    'select.pick':'– vybrat –',
+    // History items
+    'hist.cesno_flag_beard':'⚠️ vousy (rojový signál)',
+    'hist.cesno_flag_nopollen':'bez pylu',
+    // Hive queen badge
+    'badge.missing_queen':'✗ matka',
+    'badge.old_queen':'⚠️ stará matka',
+    // prevzeti note parts
+    'prev.from':'Od: ',
+    'prev.sila':'Síla při převzetí: ',
+    'prev.zdrav':'Zdravotní list: ',
+    'prev.varroa':'Poslední léčení varroázy: ',
+    'prev.note':'Poznámka: ',
+    // Detail origin
+    'detail.origin_label':'Původ',
+    'detail.origin_from_hive_detail':'z úlu: ',
+    'detail.origin_place_detail':'místo: ',
+  },
+  en:{
+    // App
+    'app.subtitle':'Colony management',
+    // Nav
+    'nav.dash':'Dashboard',
+    'nav.hives':'Hives',
+    'nav.stan':'Locations',
+    'nav.tasks':'Tasks',
+    // Dashboard
+    'dash.colonies':'Colonies',
+    'dash.boxes_total':'Boxes total',
+    'dash.apiaries':'Apiaries',
+    'dash.open_tasks':'Open tasks',
+    'dash.recent':'Recent records',
+    'dash.empty':'No records yet.',
+    // Hive list
+    'hives.title':'My hives',
+    'hives.add':'Add hive',
+    'hives.no_record':'No record',
+    'hives.today':'Record today',
+    'hives.days_ago':'{n} days ago',
+    // Detail
+    'detail.records':'Records',
+    'detail.boxes':'Boxes',
+    'detail.days_since':'Days since record',
+    'detail.tower_title':'Visual box tower',
+    'detail.weight_title':'Weight history (kg)',
+    'detail.timeline':'Timeline',
+    'detail.edit':'Edit',
+    'detail.delete':'Delete',
+    'detail.queen_none':'👑 Queen: not recorded – add via Edit or a record',
+    'detail.queen_old':'⚠️ Old',
+    'detail.queen_marked':'· marked',
+    'detail.queen_clipped':'· clipped',
+    'detail.queen_unknown_status':'unknown status',
+    'detail.origin_prefix':'Origin: ',
+    'detail.origin_from_hive':'from hive: ',
+    'detail.origin_place':'location: ',
+    'detail.age_year_1':'{n} year',
+    'detail.age_year_24':'{n} years',
+    'detail.age_year_5':'{n} years',
+    'detail.no_records':'No records. Add the first one!',
+    // Tower
+    'tower.top':'🍯 Top – ready to harvest',
+    'tower.bottom':'📦 Bottom – newest (nadir)',
+    'tower.middle':'Box',
+    'tower.empty':'No boxes — add nadiring or set initial count when creating the hive.',
+    // History modal
+    'hist.title_suffix':'– History',
+    'hist.age':'Hive age',
+    'hist.harvested':'Harvested boxes',
+    'hist.swarms':'Swarms',
+    'hist.feedings':'Feedings',
+    'hist.nadireno':'Nadired',
+    'hist.records':'Records',
+    'hist.weight':'⚖️ Weight history',
+    'hist.box_moves':'📦 Box movements',
+    'hist.key_events':'📋 Key events',
+    'hist.origin':'Colony origin',
+    'hist.no_moves':'No box movements.',
+    'hist.no_events':'No key events.',
+    'hist.acquired':'· acquired ',
+    'hist.move_add':'+{n} box to bottom',
+    'hist.move_remove':'−{n} box from top (harvest)',
+    'hist.boxes_count':'{n} boxes',
+    'hist.empty_boxes':'empty',
+    // Apiaries
+    'stan.title':'Apiaries',
+    'stan.empty':'No apiaries. Add the first one.',
+    'stan.no_hives':'No hives',
+    'stan.num_prefix':'no. ',
+    'stan.edit':'Edit',
+    'stan.delete':'Delete',
+    // Tasks
+    'tasks.title':'Tasks & reminders',
+    'tasks.empty':'No tasks!',
+    // Record types
+    'rec.cesno':'Entrance observation',
+    'rec.vaha':'Weight',
+    'rec.nadireni':'Nadiring',
+    'rec.sklizen':'Harvest',
+    'rec.krmeni':'Feeding',
+    'rec.rojeni':'Swarming',
+    'rec.polstar':'Quilt',
+    'rec.otoceni':'Path rotation',
+    'rec.poznamka':'Note',
+    'rec.matka':'Queen event',
+    'rec.prevzeti':'Colony acquisition',
+    'rec.default':'Record',
+    // Record summary labels
+    'sum.aktivita':'activity: ',
+    'sum.pyl':'pollen: ',
+    'sum.vousy_warn':'⚠️ beard',
+    'sum.boxes_added':'+{n} box/es added to bottom',
+    'sum.boxes_harvested':'{n} box/es harvested from top',
+    'sum.sila':'strength: {n}/5',
+    'sum.zdrav_list':'health certificate: ',
+    'sum.varroa_treated':'varroa treated: ',
+    'sum.from':'from: ',
+    'sum.queen_confirmed':'✓ Presence confirmed',
+    'sum.queen_supersedura':'🔄 Supersedure',
+    'sum.queen_after_swarm':'🐝 New after swarm',
+    'sum.queen_introduced':'📥 Introduced',
+    'sum.queen_purchased':'🛒 New queen purchased',
+    'sum.queen_missing':'✗ Missing / dead',
+    'sum.queen_marked':'marked',
+    'sum.queen_clipped':'clipped',
+    'sum.queen_year':'year ',
+    // Plurals
+    'nastavek_1':'{n} box',
+    'nastavek_24':'{n} boxes',
+    'nastavek_5':'{n} boxes',
+    'ul_1':'{n} hive',
+    'ul_24':'{n} hives',
+    'ul_5':'{n} hives',
+    'zaznam_1':'{n} record',
+    'zaznam_24':'{n} records',
+    'zaznam_5':'{n} records',
+    'ukol_1':'{n} task',
+    'ukol_24':'{n} tasks',
+    'ukol_5':'{n} tasks',
+    'vcelstvo_1':'{n} colony',
+    'vcelstvo_24':'{n} colonies',
+    'vcelstvo_5':'{n} colonies',
+    // Queen colors
+    'queen.color.white':'White',
+    'queen.color.yellow':'Yellow',
+    'queen.color.red':'Red',
+    'queen.color.green':'Green',
+    'queen.color.blue':'Blue',
+    // Cesno activity
+    'cesno.klidne':'calm',
+    'cesno.normalni':'normal',
+    'cesno.zvysene':'elevated',
+    'cesno.rojove':'swarm-like',
+    'cesno.prazdne':'empty',
+    // Queen status
+    'queen.status.pritomna':'present',
+    'queen.status.podezreni':'suspected missing',
+    'queen.status.chybi':'missing',
+    // Queen origin
+    'queen.origin.nezname':'unknown',
+    'queen.origin.prirozena':'natural replacement',
+    'queen.origin.po_roji':'after swarm',
+    'queen.origin.zavedena':'introduced',
+    'queen.origin.vlastni_odchov':'own rearing',
+    'queen.origin.koupena':'purchased',
+    // Origin types
+    'origin.oddelek':'✂️ Own split',
+    'origin.roj-vlastni':'🐝 Own swarm',
+    'origin.roj-divoky':'🌿 Wild swarm',
+    'origin.chovatel':'🤝 From breeder',
+    'origin.koupeno':'🛒 Purchased',
+    'origin.jine':'📝 Other',
+    // Hive modal
+    'hive_modal.new':'New hive',
+    'hive_modal.edit':'Edit hive',
+    'hive_modal.name_label':'Hive name',
+    'hive_modal.name_placeholder':'e.g. Linden, Hive #1…',
+    'hive_modal.type_label':'Hive type',
+    'hive_modal.status_label':'Status',
+    'hive_modal.stan_label':'Apiary',
+    'hive_modal.stan_none':'– No apiary –',
+    'hive_modal.init_boxes_label':'Initial number of boxes',
+    'hive_modal.origin_label':'Colony origin',
+    'hive_modal.acq_date_label':'Date of acquisition (optional)',
+    'hive_modal.src_hive_label':'Source hive',
+    'hive_modal.src_hive_placeholder':'– select –',
+    'hive_modal.breeder_label':'Breeder name',
+    'hive_modal.seller_label':'Seller / breeder name',
+    'hive_modal.breeder_contact_placeholder':'phone / e-mail (optional)',
+    'hive_modal.place_label':'Location found',
+    'hive_modal.place_placeholder':'e.g. park by the church, Pinewood forest…',
+    'hive_modal.other_label':'Origin description',
+    'hive_modal.prevzeti_title':'📋 Condition at acquisition',
+    'hive_modal.sila_label':'Colony strength',
+    'hive_modal.health_cert_label':'Health certificate provided',
+    'hive_modal.varroa_label':'Last varroa treatment (as reported by breeder)',
+    'hive_modal.prevzeti_note_label':'Note from breeder / seller',
+    'hive_modal.prevzeti_note_placeholder':'What they told you about the colony, its traits, history…',
+    'hive_modal.queen_new_title':'👑 Queen at acquisition',
+    'hive_modal.queen_new_info':'The queen that came with the colony. Queen changes during keeping are recorded via the 👑 Queen event record type.',
+    'hive_modal.queen_year_label':'Queen year (as reported by breeder)',
+    'hive_modal.queen_color_label':'Marking color',
+    'hive_modal.queen_lays_label':'Laying?',
+    'hive_modal.queen_source_label':'How do you know',
+    'hive_modal.queen_marked_label':'Marked',
+    'hive_modal.queen_clipped_label':'Clipped',
+    'hive_modal.queen_edit_title':'👑 Queen profile',
+    'hive_modal.queen_year_label_edit':'Queen year',
+    'hive_modal.queen_status_label':'Queen status',
+    'hive_modal.queen_origin_label':'Queen origin',
+    'hive_modal.queen_breeder_label':'Breeder / seller (optional)',
+    'hive_modal.queen_breeder_placeholder':'Name or contact…',
+    'hive_modal.note_label':'Note',
+    'hive_modal.cancel':'Cancel',
+    'hive_modal.save':'Save',
+    // Record modal
+    'rec_modal.title':'New record',
+    'rec_modal.hive_label':'Hive',
+    'rec_modal.date_label':'Date',
+    'rec_modal.type_label':'Record type',
+    'rec_modal.notes_label':'Notes',
+    'rec_modal.notes_placeholder':'Optional notes…',
+    'rec_modal.cancel':'Cancel',
+    'rec_modal.save':'Save',
+    'rec_modal.cesno_activity':'Entrance activity',
+    'rec_modal.pollen':'Pollen carrying',
+    'rec_modal.beard':'Beard (swarming)',
+    'rec_modal.weight_label':'Weight (kg)',
+    'rec_modal.weight_placeholder':'e.g. 28.5',
+    'rec_modal.nadir_count':'Number of boxes to add',
+    'rec_modal.nadir_info':'📦 Boxes will be added to the bottom of the tower (nadiring).',
+    'rec_modal.harvest_count':'Number of boxes to harvest from top',
+    'rec_modal.harvest_info':'🍯 Boxes will be removed from the top of the tower.',
+    'rec_modal.feed_type':'Feed type',
+    'rec_modal.feed_amount':'Amount',
+    'rec_modal.feed_amount_placeholder':'e.g. 2 l, 500 g',
+    'rec_modal.swarm_type':'Swarm type',
+    'rec_modal.swarm_dest':'Destination (optional)',
+    'rec_modal.swarm_dest_placeholder':'new hive #5, neighbor…',
+    'rec_modal.quilt_state':'Quilt condition',
+    'rec_modal.path_info_title':'ℹ️ What is path rotation?',
+    'rec_modal.path_info':'It refers to the orientation of the combs relative to the entrance – rotating the box 90° changes how air flows through the hive.',
+    'rec_modal.warm_path':'🔆 Warm way',
+    'rec_modal.warm_path_desc':'combs parallel to the entrance. Better heat retention, recommended for autumn and winter. Warré recommended it as the default.',
+    'rec_modal.cold_path':'❄️ Cold way',
+    'rec_modal.cold_path_desc':'combs perpendicular to the entrance. Better ventilation, suitable for spring and summer.',
+    'rec_modal.path_current':'Current setting after rotation',
+    'rec_modal.queen_event':'What happened to the queen',
+    'rec_modal.queen_confirmed':'✓ Presence confirmed',
+    'rec_modal.queen_supersedura':'🔄 Supersedure',
+    'rec_modal.queen_after_swarm':'🐝 New after swarm',
+    'rec_modal.queen_introduced':'📥 Introduced from outside',
+    'rec_modal.queen_purchased':'🛒 New queen purchased',
+    'rec_modal.queen_missing':'✗ Missing / dead',
+    'rec_modal.queen_breeder_label':'From whom (breeder / stud)',
+    'rec_modal.queen_race_label':'Queen line / race',
+    'rec_modal.queen_contact_label':'Supplier contact (optional)',
+    'rec_modal.queen_year_label':'New queen year',
+    'rec_modal.queen_color_label':'Marking color',
+    'rec_modal.queen_marked_label':'Marked',
+    'rec_modal.queen_clipped_label':'Clipped',
+    'rec_modal.queen_update_note':'💡 Saving will automatically update the queen profile on this hive.',
+    // Stan modal
+    'stan_modal.new':'New apiary',
+    'stan_modal.edit':'Edit apiary',
+    'stan_modal.num_label':'Apiary number',
+    'stan_modal.name_label':'Name',
+    'stan_modal.addr_label':'Address / location description',
+    'stan_modal.gps_label':'GPS (optional)',
+    'stan_modal.note_label':'Note',
+    'stan_modal.cancel':'Cancel',
+    'stan_modal.save':'Save',
+    'stan_modal.default_name':'Apiary ',
+    // Task modal
+    'task_modal.title':'New task',
+    'task_modal.task_label':'Task',
+    'task_modal.task_placeholder':'e.g. Treat varroa…',
+    'task_modal.hive_label':'Hive (optional)',
+    'task_modal.hive_all':'– All –',
+    'task_modal.date_label':'Due date',
+    'task_modal.cancel':'Cancel',
+    'task_modal.save':'Save',
+    // Profile modal
+    'profile.title':'👤 Beekeeper profile',
+    'profile.type_label':'Entity type',
+    'profile.person':'👤 Individual',
+    'profile.company':'🏢 Company',
+    'profile.company_name_label':'Company name',
+    'profile.first_name_label':'First name',
+    'profile.first_name_resp':'Responsible person first name',
+    'profile.last_name_label':'Last name',
+    'profile.last_name_resp':'Responsible person last name',
+    'profile.reg_label':'Beekeeper registration no.',
+    'profile.birth_label':'Date of birth / ID',
+    'profile.ico_label':'Company ID',
+    'profile.addr_label':'Address',
+    'profile.phone_label':'Phone',
+    'profile.email_label':'E-mail',
+    'profile.close':'Close',
+    'profile.save':'Save',
+    'profile.report':'📄 Report',
+    'profile.backup_info':'📦 Data backup — save a copy or transfer to another device',
+    'profile.export':'📤 Export data',
+    'profile.import':'📥 Import data',
+    'profile.lang_label':'App language',
+    // History modal
+    'history.title_prefix':'📜 ',
+    'history.close':'✕',
+    // Common buttons
+    'btn.cancel':'Cancel',
+    'btn.save':'Save',
+    'btn.close':'Close',
+    'btn.edit':'Edit',
+    'btn.delete':'Delete',
+    'btn.yes':'Yes',
+    'btn.no':'No',
+    // Alerts
+    'alert.name_required':'Enter a name.',
+    'alert.hive_required':'Select a hive.',
+    'alert.type_required':'Select a record type.',
+    'alert.date_required':'Enter a date.',
+    'alert.weight_required':'Enter weight.',
+    'alert.task_required':'Enter a task.',
+    'alert.stan_required':'Enter a number or name.',
+    'alert.import_invalid':'This file is not a valid Včelník backup.',
+    'alert.import_ok':'Import successful ✓',
+    'alert.import_error':'Error reading file.',
+    'confirm.delete_hive':'Delete hive "{name}" and all its records?',
+    'confirm.delete_record':'Delete this record?',
+    'confirm.delete_stan':'Delete apiary "{name}"?',
+    'confirm.import':'Import backup from {date}?\n\nContains: {hives} hives, {records} records.\n\n⚠️ Existing data will be replaced.',
+    'confirm.import_unknown_date':'unknown date',
+    // Hive status options
+    'hstatus.aktivni':'Active',
+    'hstatus.zimovani':'Wintering',
+    'hstatus.bez_matky':'Queenless',
+    'hstatus.rojeni':'Swarming',
+    'hstatus.slabe':'Weak',
+    // Hive type options
+    'htype.warre':'Warré (peoples)',
+    'htype.langstroth':'Langstroth',
+    'htype.dadant':'Dadant',
+    'htype.nastavkovy':'Stacked',
+    'htype.jiny':'Other',
+    // Feed types
+    'feed.11':'Sugar syrup 1:1',
+    'feed.21':'Sugar syrup 2:1',
+    'feed.testo':'Fondant',
+    'feed.pyl':'Pollen / substitute',
+    'feed.jine':'Other',
+    // Quilt states
+    'quilt.suchy':'Dry ✓',
+    'quilt.vlhky':'Damp – caution',
+    'quilt.plesnivy':'Mouldy – replace',
+    'quilt.vymenen':'Replaced',
+    // Queen race
+    'race.none':'– not filled –',
+    'race.carnica':'Carniolan (Carnica)',
+    'race.buckfast':'Buckfast',
+    'race.elgon':'Elgon',
+    'race.ligustica':'Italian (Ligustica)',
+    'race.mellifera':'Dark European',
+    'race.other_pure':'Other pure line',
+    'race.unknown':'Unknown',
+    // Queen klade
+    'queen.lays.ano':'🥚 Yes, laying',
+    'queen.lays.panna':'🌸 Virgin / waiting',
+    'queen.lays.nevereno':'❓ Unverified',
+    // Queen info source
+    'queen.info.videl':'👁 I saw her',
+    'queen.info.dle_chovatele':'🗣 Per breeder',
+    'queen.info.nezname':'🤷 Unknown',
+    // Origin buttons
+    'origin_btn.oddelek':'Own split',
+    'origin_btn.roj_vlastni':'Own swarm',
+    'origin_btn.roj_divoky':'Wild swarm',
+    'origin_btn.chovatel':'From breeder',
+    'origin_btn.koupeno':'Purchased',
+    'origin_btn.jine':'Other',
+    // Health cert
+    'zdrav.ano':'✓ Yes',
+    'zdrav.ne':'✗ No',
+    'zdrav.na':'– N/A',
+    // Cesno activity buttons
+    'cesno_btn.vysoka':'🔥 High',
+    'cesno_btn.stredni':'🙂 Medium',
+    'cesno_btn.nizka':'😴 Low',
+    // Pollen
+    'pollen.ano':'🌼 Yes',
+    'pollen.ne':'✗ No',
+    // Beard
+    'beard.ano':'⚠️ Yes',
+    'beard.ne':'✓ No',
+    // Swarm type
+    'swarm.prirozene':'🌿 Natural',
+    'swarm.umele':'✂️ Artificial',
+    // Path rotation
+    'path.warm':'🔆 Warm way (winter)',
+    'path.cold':'❄️ Cold way (summer)',
+    // Yes/No generic
+    'yn.ano':'✓ Yes',
+    'yn.ne':'✗ No',
+    // Queen events (buttons in record modal)
+    'matka_btn.potvrzena':'✓ Presence confirmed',
+    'matka_btn.supersedura':'🔄 Supersedure',
+    'matka_btn.po_roji':'🐝 New after swarm',
+    'matka_btn.zavedena':'📥 Introduced from outside',
+    'matka_btn.koupena':'🛒 New queen purchased',
+    'matka_btn.chybi':'✗ Missing / dead',
+    // Queen status buttons (edit modal)
+    'queen_btn.pritomna':'✓ Present',
+    'queen_btn.podezreni':'❓ Suspected',
+    'queen_btn.chybi':'✗ Missing',
+    // Report
+    'report.back':'← Back to app',
+    'report.print':'🖨️ Print / PDF',
+    'report.title':'🐝 Colony status report',
+    'report.date_prefix':'as of ',
+    'report.breeder_info':'Beekeeper information',
+    'report.company_name':'Company name',
+    'report.name_person':'Full name',
+    'report.name_resp':'Responsible person',
+    'report.reg_num':'Beekeeper registration no.',
+    'report.birth':'Date of birth / ID',
+    'report.ico':'Company ID',
+    'report.address':'Address',
+    'report.phone':'Phone',
+    'report.email':'E-mail',
+    'report.total':'Total apiaries: {apiaries} | Total colonies: {hives}',
+    'report.col_num':'#',
+    'report.col_name':'Hive name',
+    'report.col_type':'Type',
+    'report.col_status':'Status',
+    'report.col_origin':'Origin',
+    'report.col_last':'Last record',
+    'report.no_hives':'No colonies',
+    'report.no_stan':'No apiary',
+    'report.stan_prefix':'Apiary no. ',
+    'report.days_suffix':' days',
+    'report.generated':'Generated by Včelník · ',
+    'report.signature':'Beekeeper signature',
+    // fillSelect
+    'select.no_stan':'– No apiary –',
+    'select.all_hives':'– All –',
+    'select.pick':'– select –',
+    // History items
+    'hist.cesno_flag_beard':'⚠️ beard (swarm signal)',
+    'hist.cesno_flag_nopollen':'no pollen',
+    // Hive queen badge
+    'badge.missing_queen':'✗ queen',
+    'badge.old_queen':'⚠️ old queen',
+    // prevzeti note parts
+    'prev.from':'From: ',
+    'prev.sila':'Strength at acquisition: ',
+    'prev.zdrav':'Health certificate: ',
+    'prev.varroa':'Last varroa treatment: ',
+    'prev.note':'Note: ',
+    // Detail origin
+    'detail.origin_label':'Origin',
+    'detail.origin_from_hive_detail':'from hive: ',
+    'detail.origin_place_detail':'location: ',
+  },
+  de:{
+    // App
+    'app.subtitle':'Völkerverwaltung',
+    // Nav
+    'nav.dash':'Übersicht',
+    'nav.hives':'Beuten',
+    'nav.stan':'Standorte',
+    'nav.tasks':'Aufgaben',
+    // Dashboard
+    'dash.colonies':'Völker',
+    'dash.boxes_total':'Zargen gesamt',
+    'dash.apiaries':'Standorte',
+    'dash.open_tasks':'Offene Aufgaben',
+    'dash.recent':'Letzte Einträge',
+    'dash.empty':'Noch keine Einträge.',
+    // Hive list
+    'hives.title':'Meine Beuten',
+    'hives.add':'Beute hinzufügen',
+    'hives.no_record':'Kein Eintrag',
+    'hives.today':'Eintrag heute',
+    'hives.days_ago':'Vor {n} Tagen',
+    // Detail
+    'detail.records':'Einträge',
+    'detail.boxes':'Zargen',
+    'detail.days_since':'Tage seit Eintrag',
+    'detail.tower_title':'Visueller Zargenturm',
+    'detail.weight_title':'Gewichtsverlauf (kg)',
+    'detail.timeline':'Zeitlinie',
+    'detail.edit':'Bearbeiten',
+    'detail.delete':'Löschen',
+    'detail.queen_none':'👑 Königin: nicht erfasst – über Bearbeiten oder Eintrag hinzufügen',
+    'detail.queen_old':'⚠️ Alt',
+    'detail.queen_marked':'· markiert',
+    'detail.queen_clipped':'· geflügelt',
+    'detail.queen_unknown_status':'unbekannter Status',
+    'detail.origin_prefix':'Herkunft: ',
+    'detail.origin_from_hive':'aus Beute: ',
+    'detail.origin_place':'Ort: ',
+    'detail.age_year_1':'{n} Jahr',
+    'detail.age_year_24':'{n} Jahre',
+    'detail.age_year_5':'{n} Jahre',
+    'detail.no_records':'Keine Einträge. Ersten hinzufügen!',
+    // Tower
+    'tower.top':'🍯 Oben – erntereif',
+    'tower.bottom':'📦 Unten – neueste (Unterhängen)',
+    'tower.middle':'Zarge',
+    'tower.empty':'Keine Zargen — füge Unterhängen hinzu oder gib die Anfangszahl beim Anlegen der Beute ein.',
+    // History modal
+    'hist.title_suffix':'– Verlauf',
+    'hist.age':'Beutealter',
+    'hist.harvested':'Geerntete Zargen',
+    'hist.swarms':'Schwärmen',
+    'hist.feedings':'Fütterungen',
+    'hist.nadireno':'Unterhängen',
+    'hist.records':'Einträge',
+    'hist.weight':'⚖️ Gewichtsverlauf',
+    'hist.box_moves':'📦 Zargenbewegungen',
+    'hist.key_events':'📋 Schlüsselereignisse',
+    'hist.origin':'Volkherkunft',
+    'hist.no_moves':'Keine Zargenbewegungen.',
+    'hist.no_events':'Keine Schlüsselereignisse.',
+    'hist.acquired':'· erworben ',
+    'hist.move_add':'+{n} Zarge unten',
+    'hist.move_remove':'−{n} Zarge oben (Ernte)',
+    'hist.boxes_count':'{n} Zargen',
+    'hist.empty_boxes':'leer',
+    // Apiaries
+    'stan.title':'Standorte',
+    'stan.empty':'Keine Standorte. Ersten hinzufügen.',
+    'stan.no_hives':'Keine Beuten',
+    'stan.num_prefix':'Nr. ',
+    'stan.edit':'Bearbeiten',
+    'stan.delete':'Löschen',
+    // Tasks
+    'tasks.title':'Aufgaben & Erinnerungen',
+    'tasks.empty':'Keine Aufgaben!',
+    // Record types
+    'rec.cesno':'Fluglochbeobachtung',
+    'rec.vaha':'Gewicht',
+    'rec.nadireni':'Unterhängen',
+    'rec.sklizen':'Ernte',
+    'rec.krmeni':'Fütterung',
+    'rec.rojeni':'Schwärmen',
+    'rec.polstar':'Kissen',
+    'rec.otoceni':'Wegdrehung',
+    'rec.poznamka':'Notiz',
+    'rec.matka':'Königinnenereignis',
+    'rec.prevzeti':'Volkübernahme',
+    'rec.default':'Eintrag',
+    // Record summary labels
+    'sum.aktivita':'Aktivität: ',
+    'sum.pyl':'Pollen: ',
+    'sum.vousy_warn':'⚠️ Bart',
+    'sum.boxes_added':'+{n} Zarge/n unten hinzugefügt',
+    'sum.boxes_harvested':'{n} Zarge/n oben geerntet',
+    'sum.sila':'Stärke: {n}/5',
+    'sum.zdrav_list':'Gesundheitszeugnis: ',
+    'sum.varroa_treated':'Varroabehandlung: ',
+    'sum.from':'von: ',
+    'sum.queen_confirmed':'✓ Anwesenheit bestätigt',
+    'sum.queen_supersedura':'🔄 Supersedur',
+    'sum.queen_after_swarm':'🐝 Neu nach Schwarm',
+    'sum.queen_introduced':'📥 Eingeführt',
+    'sum.queen_purchased':'🛒 Neue Königin gekauft',
+    'sum.queen_missing':'✗ Fehlt / tot',
+    'sum.queen_marked':'markiert',
+    'sum.queen_clipped':'geflügelt',
+    'sum.queen_year':'Jahr ',
+    // Plurals
+    'nastavek_1':'{n} Zarge',
+    'nastavek_24':'{n} Zargen',
+    'nastavek_5':'{n} Zargen',
+    'ul_1':'{n} Beute',
+    'ul_24':'{n} Beuten',
+    'ul_5':'{n} Beuten',
+    'zaznam_1':'{n} Eintrag',
+    'zaznam_24':'{n} Einträge',
+    'zaznam_5':'{n} Einträge',
+    'ukol_1':'{n} Aufgabe',
+    'ukol_24':'{n} Aufgaben',
+    'ukol_5':'{n} Aufgaben',
+    'vcelstvo_1':'{n} Volk',
+    'vcelstvo_24':'{n} Völker',
+    'vcelstvo_5':'{n} Völker',
+    // Queen colors
+    'queen.color.white':'Weiß',
+    'queen.color.yellow':'Gelb',
+    'queen.color.red':'Rot',
+    'queen.color.green':'Grün',
+    'queen.color.blue':'Blau',
+    // Cesno activity
+    'cesno.klidne':'ruhig',
+    'cesno.normalni':'normal',
+    'cesno.zvysene':'erhöht',
+    'cesno.rojove':'schwarmartig',
+    'cesno.prazdne':'leer',
+    // Queen status
+    'queen.status.pritomna':'vorhanden',
+    'queen.status.podezreni':'Verdacht',
+    'queen.status.chybi':'fehlt',
+    // Queen origin
+    'queen.origin.nezname':'unbekannt',
+    'queen.origin.prirozena':'natürlicher Ersatz',
+    'queen.origin.po_roji':'nach Schwarm',
+    'queen.origin.zavedena':'eingeführt',
+    'queen.origin.vlastni_odchov':'eigene Zucht',
+    'queen.origin.koupena':'gekauft',
+    // Origin types
+    'origin.oddelek':'✂️ Eigener Ableger',
+    'origin.roj-vlastni':'🐝 Eigener Schwarm',
+    'origin.roj-divoky':'🌿 Wilder Schwarm',
+    'origin.chovatel':'🤝 Vom Züchter',
+    'origin.koupeno':'🛒 Gekauft',
+    'origin.jine':'📝 Sonstiges',
+    // Hive modal
+    'hive_modal.new':'Neue Beute',
+    'hive_modal.edit':'Beute bearbeiten',
+    'hive_modal.name_label':'Beutename',
+    'hive_modal.name_placeholder':'z.B. Linde, Beute Nr.1…',
+    'hive_modal.type_label':'Beutentyp',
+    'hive_modal.status_label':'Status',
+    'hive_modal.stan_label':'Bienenstand',
+    'hive_modal.stan_none':'– Kein Standort –',
+    'hive_modal.init_boxes_label':'Anfängliche Zargenanzahl',
+    'hive_modal.origin_label':'Volkherkunft',
+    'hive_modal.acq_date_label':'Erwerbsdatum (optional)',
+    'hive_modal.src_hive_label':'Quellbeute',
+    'hive_modal.src_hive_placeholder':'– auswählen –',
+    'hive_modal.breeder_label':'Züchtername',
+    'hive_modal.seller_label':'Verkäufer / Züchter',
+    'hive_modal.breeder_contact_placeholder':'Telefon / E-Mail (optional)',
+    'hive_modal.place_label':'Fundort',
+    'hive_modal.place_placeholder':'z.B. Park bei der Kirche, Fichtenwald…',
+    'hive_modal.other_label':'Herkunftsbeschreibung',
+    'hive_modal.prevzeti_title':'📋 Zustand bei Übernahme',
+    'hive_modal.sila_label':'Volkstärke',
+    'hive_modal.health_cert_label':'Gesundheitszeugnis vorgelegt',
+    'hive_modal.varroa_label':'Letzte Varroabehandlung (laut Züchter)',
+    'hive_modal.prevzeti_note_label':'Notiz vom Züchter / Verkäufer',
+    'hive_modal.prevzeti_note_placeholder':'Was wurde über das Volk, seine Eigenschaften, Geschichte erzählt…',
+    'hive_modal.queen_new_title':'👑 Königin bei Übernahme',
+    'hive_modal.queen_new_info':'Die Königin, die mit dem Volk kam. Königinnenwechsel werden über den Eintragstyp 👑 Königinnenereignis erfasst.',
+    'hive_modal.queen_year_label':'Königinnenjahr (laut Züchter)',
+    'hive_modal.queen_color_label':'Markierungsfarbe',
+    'hive_modal.queen_lays_label':'Legt sie?',
+    'hive_modal.queen_source_label':'Woher weißt du es',
+    'hive_modal.queen_marked_label':'Markiert',
+    'hive_modal.queen_clipped_label':'Geflügelt',
+    'hive_modal.queen_edit_title':'👑 Königinnenprofil',
+    'hive_modal.queen_year_label_edit':'Königinnenjahr',
+    'hive_modal.queen_status_label':'Königinnenstatus',
+    'hive_modal.queen_origin_label':'Königinnenherkunft',
+    'hive_modal.queen_breeder_label':'Züchter / Verkäufer (optional)',
+    'hive_modal.queen_breeder_placeholder':'Name oder Kontakt…',
+    'hive_modal.note_label':'Notiz',
+    'hive_modal.cancel':'Abbrechen',
+    'hive_modal.save':'Speichern',
+    // Record modal
+    'rec_modal.title':'Neuer Eintrag',
+    'rec_modal.hive_label':'Beute',
+    'rec_modal.date_label':'Datum',
+    'rec_modal.type_label':'Eintragstyp',
+    'rec_modal.notes_label':'Notizen',
+    'rec_modal.notes_placeholder':'Optionale Notizen…',
+    'rec_modal.cancel':'Abbrechen',
+    'rec_modal.save':'Speichern',
+    'rec_modal.cesno_activity':'Fluglochaktivität',
+    'rec_modal.pollen':'Pollentracht',
+    'rec_modal.beard':'Bart (Schwärmen)',
+    'rec_modal.weight_label':'Gewicht (kg)',
+    'rec_modal.weight_placeholder':'z.B. 28.5',
+    'rec_modal.nadir_count':'Anzahl der hinzuzufügenden Zargen',
+    'rec_modal.nadir_info':'📦 Zargen werden unten am Turm hinzugefügt (Unterhängen).',
+    'rec_modal.harvest_count':'Anzahl der oben zu erntenden Zargen',
+    'rec_modal.harvest_info':'🍯 Zargen werden von oben entnommen.',
+    'rec_modal.feed_type':'Futtertyp',
+    'rec_modal.feed_amount':'Menge',
+    'rec_modal.feed_amount_placeholder':'z.B. 2 l, 500 g',
+    'rec_modal.swarm_type':'Schwarmtyp',
+    'rec_modal.swarm_dest':'Ziel (optional)',
+    'rec_modal.swarm_dest_placeholder':'neue Beute Nr.5, Nachbar…',
+    'rec_modal.quilt_state':'Kissenzustand',
+    'rec_modal.path_info_title':'ℹ️ Was ist Wegdrehung?',
+    'rec_modal.path_info':'Es geht um die Ausrichtung der Waben zum Flugloch – durch Drehen der Zarge um 90° ändert sich die Luftzirkulation im Stock.',
+    'rec_modal.warm_path':'🔆 Warmer Weg',
+    'rec_modal.warm_path_desc':'Waben parallel zum Flugloch. Bessere Wärmespeicherung, empfohlen für Herbst und Winter. Warré empfahl dies als Standardeinstellung.',
+    'rec_modal.cold_path':'❄️ Kalter Weg',
+    'rec_modal.cold_path_desc':'Waben senkrecht zum Flugloch. Bessere Belüftung, geeignet für Frühling und Sommer.',
+    'rec_modal.path_current':'Aktuelle Einstellung nach Drehung',
+    'rec_modal.queen_event':'Was ist mit der Königin passiert',
+    'rec_modal.queen_confirmed':'✓ Anwesenheit bestätigt',
+    'rec_modal.queen_supersedura':'🔄 Supersedur',
+    'rec_modal.queen_after_swarm':'🐝 Neu nach Schwarm',
+    'rec_modal.queen_introduced':'📥 Von außen eingeführt',
+    'rec_modal.queen_purchased':'🛒 Neue Königin gekauft',
+    'rec_modal.queen_missing':'✗ Fehlt / tot',
+    'rec_modal.queen_breeder_label':'Von wem (Züchter / Zuchtstation)',
+    'rec_modal.queen_race_label':'Linie / Rasse der Königin',
+    'rec_modal.queen_contact_label':'Lieferantenkontakt (optional)',
+    'rec_modal.queen_year_label':'Neue Königin Jahr',
+    'rec_modal.queen_color_label':'Markierungsfarbe',
+    'rec_modal.queen_marked_label':'Markiert',
+    'rec_modal.queen_clipped_label':'Geflügelt',
+    'rec_modal.queen_update_note':'💡 Beim Speichern wird das Königinnenprofil dieser Beute automatisch aktualisiert.',
+    // Stan modal
+    'stan_modal.new':'Neuer Bienenstand',
+    'stan_modal.edit':'Bienenstand bearbeiten',
+    'stan_modal.num_label':'Standortnummer',
+    'stan_modal.name_label':'Name',
+    'stan_modal.addr_label':'Adresse / Ortsbeschreibung',
+    'stan_modal.gps_label':'GPS (optional)',
+    'stan_modal.note_label':'Notiz',
+    'stan_modal.cancel':'Abbrechen',
+    'stan_modal.save':'Speichern',
+    'stan_modal.default_name':'Standort ',
+    // Task modal
+    'task_modal.title':'Neue Aufgabe',
+    'task_modal.task_label':'Aufgabe',
+    'task_modal.task_placeholder':'z.B. Varroabehandlung…',
+    'task_modal.hive_label':'Beute (optional)',
+    'task_modal.hive_all':'– Alle –',
+    'task_modal.date_label':'Fälligkeitsdatum',
+    'task_modal.cancel':'Abbrechen',
+    'task_modal.save':'Speichern',
+    // Profile modal
+    'profile.title':'👤 Imkerprofil',
+    'profile.type_label':'Entitätstyp',
+    'profile.person':'👤 Privatperson',
+    'profile.company':'🏢 Unternehmen',
+    'profile.company_name_label':'Firmenname',
+    'profile.first_name_label':'Vorname',
+    'profile.first_name_resp':'Vorname der verantwortlichen Person',
+    'profile.last_name_label':'Nachname',
+    'profile.last_name_resp':'Nachname der verantwortlichen Person',
+    'profile.reg_label':'Imker-Registrierungsnr.',
+    'profile.birth_label':'Geburtsdatum / Ausweis',
+    'profile.ico_label':'Unternehmens-ID',
+    'profile.addr_label':'Adresse',
+    'profile.phone_label':'Telefon',
+    'profile.email_label':'E-Mail',
+    'profile.close':'Schließen',
+    'profile.save':'Speichern',
+    'profile.report':'📄 Bericht',
+    'profile.backup_info':'📦 Datensicherung — speichere eine Kopie oder übertrage auf ein anderes Gerät',
+    'profile.export':'📤 Daten exportieren',
+    'profile.import':'📥 Daten importieren',
+    'profile.lang_label':'App-Sprache',
+    // History modal
+    'history.title_prefix':'📜 ',
+    'history.close':'✕',
+    // Common buttons
+    'btn.cancel':'Abbrechen',
+    'btn.save':'Speichern',
+    'btn.close':'Schließen',
+    'btn.edit':'Bearbeiten',
+    'btn.delete':'Löschen',
+    'btn.yes':'Ja',
+    'btn.no':'Nein',
+    // Alerts
+    'alert.name_required':'Bitte Namen eingeben.',
+    'alert.hive_required':'Bitte Beute auswählen.',
+    'alert.type_required':'Bitte Eintragstyp auswählen.',
+    'alert.date_required':'Bitte Datum eingeben.',
+    'alert.weight_required':'Bitte Gewicht eingeben.',
+    'alert.task_required':'Bitte Aufgabe eingeben.',
+    'alert.stan_required':'Bitte Nummer oder Name eingeben.',
+    'alert.import_invalid':'Diese Datei ist kein gültiges Včelník-Backup.',
+    'alert.import_ok':'Import erfolgreich ✓',
+    'alert.import_error':'Fehler beim Lesen der Datei.',
+    'confirm.delete_hive':'Beute „{name}" und alle Einträge löschen?',
+    'confirm.delete_record':'Diesen Eintrag löschen?',
+    'confirm.delete_stan':'Bienenstand „{name}" löschen?',
+    'confirm.import':'Backup vom {date} importieren?\n\nEnthält: {hives} Beuten, {records} Einträge.\n\n⚠️ Bestehende Daten werden ersetzt.',
+    'confirm.import_unknown_date':'unbekanntes Datum',
+    // Hive status options
+    'hstatus.aktivni':'Aktiv',
+    'hstatus.zimovani':'Überwinterung',
+    'hstatus.bez_matky':'Weisellos',
+    'hstatus.rojeni':'Schwärmen',
+    'hstatus.slabe':'Schwach',
+    // Hive type options
+    'htype.warre':'Warré (Volksbeute)',
+    'htype.langstroth':'Langstroth',
+    'htype.dadant':'Dadant',
+    'htype.nastavkovy':'Stapelbeute',
+    'htype.jiny':'Sonstiges',
+    // Feed types
+    'feed.11':'Zuckerlösung 1:1',
+    'feed.21':'Zuckerlösung 2:1',
+    'feed.testo':'Futterteig',
+    'feed.pyl':'Pollen / Ersatz',
+    'feed.jine':'Sonstiges',
+    // Quilt states
+    'quilt.suchy':'Trocken ✓',
+    'quilt.vlhky':'Feucht – Achtung',
+    'quilt.plesnivy':'Schimmelig – ersetzen',
+    'quilt.vymenen':'Ersetzt',
+    // Queen race
+    'race.none':'– nicht ausgefüllt –',
+    'race.carnica':'Kärntner (Carnica)',
+    'race.buckfast':'Buckfast',
+    'race.elgon':'Elgon',
+    'race.ligustica':'Italienische (Ligustica)',
+    'race.mellifera':'Dunkle Europäische',
+    'race.other_pure':'Andere Reinlinie',
+    'race.unknown':'Unbekannt',
+    // Queen klade
+    'queen.lays.ano':'🥚 Ja, legt',
+    'queen.lays.panna':'🌸 Jungkönigin / wartet',
+    'queen.lays.nevereno':'❓ Ungeprüft',
+    // Queen info source
+    'queen.info.videl':'👁 Ich habe sie gesehen',
+    'queen.info.dle_chovatele':'🗣 Laut Züchter',
+    'queen.info.nezname':'🤷 Unbekannt',
+    // Origin buttons
+    'origin_btn.oddelek':'Eigener Ableger',
+    'origin_btn.roj_vlastni':'Eigener Schwarm',
+    'origin_btn.roj_divoky':'Wilder Schwarm',
+    'origin_btn.chovatel':'Vom Züchter',
+    'origin_btn.koupeno':'Gekauft',
+    'origin_btn.jine':'Sonstiges',
+    // Health cert
+    'zdrav.ano':'✓ Ja',
+    'zdrav.ne':'✗ Nein',
+    'zdrav.na':'– N/A',
+    // Cesno activity buttons
+    'cesno_btn.vysoka':'🔥 Hoch',
+    'cesno_btn.stredni':'🙂 Mittel',
+    'cesno_btn.nizka':'😴 Niedrig',
+    // Pollen
+    'pollen.ano':'🌼 Ja',
+    'pollen.ne':'✗ Nein',
+    // Beard
+    'beard.ano':'⚠️ Ja',
+    'beard.ne':'✓ Nein',
+    // Swarm type
+    'swarm.prirozene':'🌿 Natürlich',
+    'swarm.umele':'✂️ Künstlich',
+    // Path rotation
+    'path.warm':'🔆 Warmer Weg (Winter)',
+    'path.cold':'❄️ Kalter Weg (Sommer)',
+    // Yes/No generic
+    'yn.ano':'✓ Ja',
+    'yn.ne':'✗ Nein',
+    // Queen events (buttons in record modal)
+    'matka_btn.potvrzena':'✓ Anwesenheit bestätigt',
+    'matka_btn.supersedura':'🔄 Supersedur',
+    'matka_btn.po_roji':'🐝 Neu nach Schwarm',
+    'matka_btn.zavedena':'📥 Von außen eingeführt',
+    'matka_btn.koupena':'🛒 Neue Königin gekauft',
+    'matka_btn.chybi':'✗ Fehlt / tot',
+    // Queen status buttons (edit modal)
+    'queen_btn.pritomna':'✓ Vorhanden',
+    'queen_btn.podezreni':'❓ Verdacht',
+    'queen_btn.chybi':'✗ Fehlt',
+    // Report
+    'report.back':'← Zurück zur App',
+    'report.print':'🖨️ Drucken / PDF',
+    'report.title':'🐝 Völkerstatusbericht',
+    'report.date_prefix':'Stand ',
+    'report.breeder_info':'Imkerangaben',
+    'report.company_name':'Firmenname',
+    'report.name_person':'Vor- und Nachname',
+    'report.name_resp':'Verantwortliche Person',
+    'report.reg_num':'Imker-Registrierungsnr.',
+    'report.birth':'Geburtsdatum / Ausweis',
+    'report.ico':'Unternehmens-ID',
+    'report.address':'Adresse',
+    'report.phone':'Telefon',
+    'report.email':'E-Mail',
+    'report.total':'Standorte gesamt: {apiaries} | Völker gesamt: {hives}',
+    'report.col_num':'#',
+    'report.col_name':'Beutename',
+    'report.col_type':'Typ',
+    'report.col_status':'Status',
+    'report.col_origin':'Herkunft',
+    'report.col_last':'Letzter Eintrag',
+    'report.no_hives':'Keine Völker',
+    'report.no_stan':'Kein Standort',
+    'report.stan_prefix':'Standort Nr. ',
+    'report.days_suffix':' Tage',
+    'report.generated':'Erstellt mit Včelník · ',
+    'report.signature':'Unterschrift des Imkers',
+    // fillSelect
+    'select.no_stan':'– Kein Standort –',
+    'select.all_hives':'– Alle –',
+    'select.pick':'– auswählen –',
+    // History items
+    'hist.cesno_flag_beard':'⚠️ Bart (Schwarmsignal)',
+    'hist.cesno_flag_nopollen':'kein Pollen',
+    // Hive queen badge
+    'badge.missing_queen':'✗ Königin',
+    'badge.old_queen':'⚠️ alte Königin',
+    // prevzeti note parts
+    'prev.from':'Von: ',
+    'prev.sila':'Stärke bei Übernahme: ',
+    'prev.zdrav':'Gesundheitszeugnis: ',
+    'prev.varroa':'Letzte Varroabehandlung: ',
+    'prev.note':'Notiz: ',
+    // Detail origin
+    'detail.origin_label':'Herkunft',
+    'detail.origin_from_hive_detail':'aus Beute: ',
+    'detail.origin_place_detail':'Ort: ',
+  },
+};
+
+// ════════════════════════════
+//  I18N ENGINE
+// ════════════════════════════
+let currentLang = localStorage.getItem('vcelnik_lang')||'cs';
+
+function t(key, vars){
+  const str = TRANSLATIONS[currentLang]?.[key] ?? TRANSLATIONS.cs[key] ?? key;
+  if(!vars) return str;
+  return str.replace(/\{(\w+)\}/g, (_,k)=>vars[k]??'');
+}
+
+// Czech pluralization helper: 1 = singular, 2-4 = few, 5+ = many
+function tPlural(key, n){
+  const suffix = n===1 ? '_1' : (n>=2&&n<=4) ? '_24' : '_5';
+  return t(key+suffix, {n});
+}
+
+function applyTranslations(){
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const key=el.dataset.i18n;
+    if(el.dataset.i18nAttr==='placeholder') el.placeholder=t(key);
+    else el.textContent=t(key);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>{
+    el.placeholder=t(el.dataset.i18nPlaceholder);
+  });
+  // Update html lang attribute
+  document.documentElement.lang=currentLang;
+}
+
+function setLanguage(lang){
+  currentLang=lang;
+  localStorage.setItem('vcelnik_lang',lang);
+  document.querySelectorAll('[data-lang-btn]').forEach(b=>b.classList.toggle('active',b.dataset.langBtn===lang));
+  applyTranslations();
+  ({dash:renderDash,uly:renderHives,detail:renderDetail,stan:renderStan,ukoly:renderTasks}[currentView]||renderDash)();
+}
+
+// ════════════════════════════
+//  DATA LAYER (Supabase)
+// ════════════════════════════
+let _state = { hives:[], records:[], tasks:[], stanoviste:[] };
+let profile = {};
+
+// In-memory accessor (used everywhere in the UI)
+function getData(){ return _state; }
+// Alias 'data' to _state so all existing render code keeps working
+Object.defineProperty(window,'data',{get:()=>_state});
+
+async function loadAllData(){
+  const [hivesRes, recordsRes, tasksRes, stanRes] = await Promise.all([
+    supa.from('hives').select('*').is('deleted_at', null).order('created_at'),
+    supa.from('records').select('*').is('deleted_at', null).order('date', {ascending: false}),
+    supa.from('tasks').select('*').is('deleted_at', null).order('created_at'),
+    supa.from('stanoviste').select('*').is('deleted_at', null).order('number'),
+  ]);
+  _state = {
+    hives: (hivesRes.data||[]).map(h => ({...h, stanId: h.stan_id})),
+    records: (recordsRes.data||[]).map(r => ({...r, hiveId: r.hive_id})),
+    tasks: (tasksRes.data||[]).map(tk => ({...tk, text: tk.title, due: tk.due_date, hiveId: tk.hive_id,
+      // tasks use 'title' in DB but 'title' in app too, so keep title; add date alias
+      date: tk.due_date})),
+    stanoviste: stanRes.data||[],
+  };
+  // Load profile
+  const {data: profData} = await supa.from('profiles').select('*').eq('id', currentUser.id).single();
+  if(profData){
+    profile = {
+      _typ: profData.typ||'osoba',
+      firma: profData.firma||'',
+      jmeno: profData.jmeno||'',
+      prijmeni: profData.prijmeni||'',
+      regCislo: profData.reg_cislo||'',
+      rodCislo: profData.rod_cislo||'',
+      adresa: profData.adresa||'',
+      telefon: profData.telefon||'',
+      email: profData.email||'',
+      ico: profData.ico||'',
+    };
+  }
+}
+
+// Dummy save() – no-op since we now save per-operation to Supabase.
+// Kept so any stray call doesn't crash.
+function save(){}
+
+function exportData(){
+  const payload={
+    _verze:2,
+    exportováno:new Date().toISOString(),
+    hives: _state.hives,
+    records: _state.records,
+    tasks: _state.tasks,
+    stanoviste: _state.stanoviste,
+    profil:profile,
+  };
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const datum=new Date().toISOString().slice(0,10);
+  a.href=url; a.download=`vcelnik-zaloha-${datum}.json`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+function importData(input){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=async e=>{
+    try{
+      const p=JSON.parse(e.target.result);
+      // Support both old format (p.data.hives) and new format (p.hives)
+      const importHives = p.hives || p.data?.hives;
+      const importRecords = p.records || p.data?.records;
+      const importTasks = p.tasks || p.data?.tasks;
+      const importStan = p.stanoviste || p.data?.stanoviste;
+      if(!importHives){alert(t('alert.import_invalid'));input.value='';return;}
+      const pocetUlu=importHives?.length||0;
+      const pocetZaz=importRecords?.length||0;
+      if(!confirm(t('confirm.import',{date:fmtDate(p.exportováno?.slice(0,10))||t('confirm.import_unknown_date'),hives:pocetUlu,records:pocetZaz}))){input.value='';return;}
+      if(importHives?.length){
+        await supa.from('hives').upsert(importHives.map(h=>({...h, user_id:currentUser.id, stan_id:h.stanId||h.stan_id||null, stanId:undefined})));
+      }
+      if(importRecords?.length){
+        await supa.from('records').upsert(importRecords.map(r=>({...r, user_id:currentUser.id, hive_id:r.hiveId||r.hive_id, hiveId:undefined})));
+      }
+      if(importTasks?.length){
+        await supa.from('tasks').upsert(importTasks.map(tk=>({...tk, user_id:currentUser.id,
+          title:tk.title||tk.text, due_date:tk.due_date||tk.due||tk.date||null,
+          hive_id:tk.hiveId||tk.hive_id||null, text:undefined, due:undefined, hiveId:undefined, date:undefined})));
+      }
+      if(importStan?.length){
+        await supa.from('stanoviste').upsert(importStan.map(s=>({...s, user_id:currentUser.id})));
+      }
+      await loadAllData();
+      input.value='';
+      closeModal('profileModal');
+      showView('dash');
+      alert(t('alert.import_ok'));
+    }catch(err){console.error(err);alert(t('alert.import_error'));input.value='';}
+  };
+  reader.readAsText(file);
+}
+
+function uid(){ return crypto.randomUUID(); }
+
+// Supabase error helper – throws if Supabase returned an error
+function sb(res){ if(res.error) throw new Error(res.error.message||JSON.stringify(res.error)); return res.data; }
+function esc(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function today(){ return new Date().toISOString().slice(0,10); }
+function fmtDate(s){ if(!s)return''; const[y,m,d]=s.split('-'); return`${d}.${m}.${y}`; }
+function daysAgo(s){ if(!s)return null; return Math.floor((Date.now()-new Date(s))/86400000); }
+
+// ════════════════════════════
+//  NAVIGATION
+// ════════════════════════════
+let currentView='dash', currentHiveId=null;
+
+function showView(v){
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));
+  currentView=v;
+  const vmap={dash:'viewDash',uly:'viewUly',detail:'viewDetail',stan:'viewStan',ukoly:'viewUkoly'};
+  const nmap={dash:'navDash',uly:'navUly',detail:'navUly',stan:'navStan',ukoly:'navUkoly'};
+  document.getElementById(vmap[v]).classList.add('active');
+  document.getElementById(nmap[v]).classList.add('active');
+  ({dash:renderDash,uly:renderHives,detail:renderDetail,stan:renderStan,ukoly:renderTasks}[v]||renderDash)();
+}
+function goBack(){ showView('uly'); }
+
+// ════════════════════════════
+//  DASHBOARD
+// ════════════════════════════
+function renderDash(){
+  const totalB=data.hives.reduce((s,h)=>s+(h.nastavky?.length||0),0);
+  const openT=data.tasks.filter(t=>!t.done).length;
+  document.getElementById('dashGrid').innerHTML=`
+    <div class="dash-box"><span class="dash-icon">🐝</span><div><div class="dash-val">${data.hives.length}</div><div class="dash-label">${t('dash.colonies')}</div></div></div>
+    <div class="dash-box"><span class="dash-icon">📦</span><div><div class="dash-val">${totalB}</div><div class="dash-label">${t('dash.boxes_total')}</div></div></div>
+    <div class="dash-box"><span class="dash-icon">📍</span><div><div class="dash-val">${data.stanoviste.length}</div><div class="dash-label">${t('dash.apiaries')}</div></div></div>
+    <div class="dash-box"><span class="dash-icon">✅</span><div><div class="dash-val">${openT}</div><div class="dash-label">${t('dash.open_tasks')}</div></div></div>`;
+  const recent=[...data.records].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8);
+  const rl=document.getElementById('recentList');
+  if(!recent.length){rl.innerHTML=`<div class="empty"><div class="ei">📭</div><p>${t('dash.empty')}</p></div>`;return;}
+  rl.innerHTML=recent.map(r=>{
+    const h=data.hives.find(x=>x.id===r.hiveId);
+    const{icon,label}=recMeta(r);
+    return`<div class="activity-item" onclick="openHiveDetail('${r.hiveId}')">
+      <span class="activity-icon">${icon}</span>
+      <div class="activity-body"><div class="at">${h?esc(h.name):'?'} – ${label}</div>
+      <div class="as">${fmtDate(r.date)}${recSummary(r)?' · '+recSummary(r):''}</div></div></div>`;
+  }).join('');
+}
+
+// ════════════════════════════
+//  HIVES
+// ════════════════════════════
+function renderHives(){
+  document.getElementById('headerSub').textContent=tPlural('vcelstvo',data.hives.length);
+  const grid=document.getElementById('hiveGrid');
+  grid.innerHTML='';
+  data.hives.forEach(h=>{
+    const recs=data.records.filter(r=>r.hiveId===h.id).sort((a,b)=>b.date.localeCompare(a.date));
+    const last=recs[0]; const da=daysAgo(last?.date);
+    const sc=h.status==='aktivní'?'ok':(h.status==='bez matky'||h.status==='slabé')?'danger':'warn';
+    const boxes=h.nastavky?.length||0;
+    const tower=boxes?`<div class="mini-tower">${Array.from({length:Math.min(boxes,6)},()=>'<div class="mini-box"></div>').join('')}</div>`:'';
+    const card=document.createElement('div');
+    card.className='hive-card'+(h.type==='Warré'?' warre':'');
+    const q=h.queen||{};
+    const qc=q.rok?queenColor(q.rok):null;
+    const qAge=queenAge(q.rok);
+    const qDot=qc?`<span title="Matka ${q.rok}" style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:${qc.bg};color:${qc.fg};font-size:.6rem;font-weight:800;flex-shrink:0">${qc.mnemonic}</span>`:'';
+    const qWarn=q.stav==='chybí'?`<span class="badge danger">${t('badge.missing_queen')}</span>`:
+      (qAge!==null&&qAge>=2)?`<span class="badge warn">${t('badge.old_queen')}</span>`:'';
+    card.innerHTML=`<div class="hive-top"><div><div class="hive-name">${h.type==='Warré'?'🏚️':'🏠'} ${esc(h.name)}</div>
+      <div class="hive-loc">${esc(getStanName(h.stanId))}</div></div>
+      ${qDot}</div>
+      <div class="hive-meta"><span class="badge ${sc}">${esc(h.status)}</span>
+      <span class="badge">${esc(h.type)}</span>${boxes?`<span class="badge warn">📦 ${boxes}</span>`:''}${qWarn}</div>
+      ${tower}<div class="hive-last">${da===null?t('hives.no_record'):da===0?t('hives.today'):t('hives.days_ago',{n:da})}</div>`;
+    card.onclick=()=>openHiveDetail(h.id);
+    grid.appendChild(card);
+  });
+  const add=document.createElement('div');
+  add.className='hive-add';
+  add.innerHTML=`<span class="plus">+</span><span>${t('hives.add')}</span>`;
+  add.onclick=()=>openHiveModal();
+  grid.appendChild(add);
+}
+
+function openHiveDetail(id){ currentHiveId=id; showView('detail'); }
+
+// ════════════════════════════
+//  HIVE MODAL
+// ════════════════════════════
+let editHiveId=null, currentOrigin=null;
+let _prevSila='3', _prevZdrav='ne';
+
+function togPrevSila(btn){
+  document.querySelectorAll('#prevezetiSilaRow .tog-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); _prevSila=btn.dataset.ps;
+}
+function togPrevZdrav(btn){
+  btn.closest('.tog-row').querySelectorAll('.tog-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); _prevZdrav=btn.dataset.pz;
+}
+function togMatkaUdalost(btn){
+  togField(btn,'mUdalost');
+  const v=btn.dataset.v;
+  const showNew=['supersedura','po roji','zavedena','koupena'].includes(v);
+  document.getElementById('matkaNewQueenFields').style.display=showNew&&v!=='chybí'?'':'none';
+  document.getElementById('matkaKoupenaFields').style.display=v==='koupena'?'':'none';
+}
+
+function setOrigin(o){
+  currentOrigin=o;
+  document.querySelectorAll('#originGrid .type-btn').forEach(b=>b.classList.toggle('active',b.dataset.o===o));
+  document.getElementById('originSrcHiveGroup').style.display=(o==='oddelek'||o==='roj-vlastni')?'':'none';
+  document.getElementById('originBreederGroup').style.display=(o==='chovatel'||o==='koupeno')?'':'none';
+  document.getElementById('originPlaceGroup').style.display=(o==='roj-divoky')?'':'none';
+  document.getElementById('originOtherGroup').style.display=(o==='jine')?'':'none';
+  document.getElementById('originBreederLabel').textContent=o==='koupeno'?t('hive_modal.seller_label'):t('hive_modal.breeder_label');
+  // Zobraz sekci „Stav při převzetí" jen pro od chovatele / koupeno, a jen při novém úlu
+  document.getElementById('prevezetiGroup').style.display=(!editHiveId&&(o==='chovatel'||o==='koupeno'))?'':'none';
+}
+
+// ── Queen helpers ──────────────────────────
+const QUEEN_COLORS={
+  1:{bg:'#f0f0f0',fg:'#222',name:'Bílá',mnemonic:'W'},
+  2:{bg:'#ffd700',fg:'#222',name:'Žlutá',mnemonic:'Y'},
+  3:{bg:'#e05a2b',fg:'#fff',name:'Červená',mnemonic:'R'},
+  4:{bg:'#7ab648',fg:'#fff',name:'Zelená',mnemonic:'G'},
+  5:{bg:'#4a90d9',fg:'#fff',name:'Modrá',mnemonic:'B'},
+  6:{bg:'#f0f0f0',fg:'#222',name:'Bílá',mnemonic:'W'},
+  7:{bg:'#ffd700',fg:'#222',name:'Žlutá',mnemonic:'Y'},
+  8:{bg:'#e05a2b',fg:'#fff',name:'Červená',mnemonic:'R'},
+  9:{bg:'#7ab648',fg:'#fff',name:'Zelená',mnemonic:'G'},
+  0:{bg:'#4a90d9',fg:'#fff',name:'Modrá',mnemonic:'B'},
+};
+function queenColor(year){ return QUEEN_COLORS[+String(year).slice(-1)]||null; }
+function queenAge(year){ return year?new Date().getFullYear()-year:null; }
+
+function updateQueenColor(){
+  const y=document.getElementById('hiveQueenYear').value;
+  const el=document.getElementById('queenColorDisplay');
+  const c=y?queenColor(+y):null;
+  const cname_map={W:'white',Y:'yellow',R:'red',G:'green',B:'blue'};
+  if(c){ el.style.background=c.bg; el.style.color=c.fg; el.textContent=`${c.mnemonic} – ${t('queen.color.'+cname_map[c.mnemonic])}`; }
+  else { el.style.background='var(--s2)'; el.style.color='var(--dim)'; el.textContent='–'; }
+}
+function updateRecQueenColor(){
+  const y=document.getElementById('recQueenYear').value;
+  const el=document.getElementById('recQueenColorDisplay');
+  const c=y?queenColor(+y):null;
+  const cname_map={W:'white',Y:'yellow',R:'red',G:'green',B:'blue'};
+  if(c){ el.style.background=c.bg; el.style.color=c.fg; el.textContent=`${c.mnemonic} – ${t('queen.color.'+cname_map[c.mnemonic])}`; }
+  else { el.style.background='var(--s2)'; el.style.color='var(--dim)'; el.textContent='–'; }
+}
+
+let _queenStatus='přítomna', _queenZnacena='ne', _queenOstrizena='ne';
+let _queenKlade='ano', _queenInfo='dle chovatele';
+function togQueenStatus(btn){
+  document.querySelectorAll('[data-q]').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); _queenStatus=btn.dataset.q;
+}
+function togQueenMark(btn,field){
+  const row=btn.closest('.tog-row');
+  row.querySelectorAll('.tog-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(field==='znacena') _queenZnacena=btn.dataset.qz;
+  else _queenOstrizena=btn.dataset.qo;
+}
+function togQueenKlade(btn){
+  btn.closest('.tog-row').querySelectorAll('.tog-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); _queenKlade=btn.dataset.qk;
+}
+function togQueenInfo(btn){
+  btn.closest('.tog-row').querySelectorAll('.tog-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); _queenInfo=btn.dataset.qi;
+}
+function updateQueenColorEdit(){
+  const y=document.getElementById('hiveQueenYearEdit').value;
+  const el=document.getElementById('queenColorDisplayEdit');
+  const c=y?queenColor(+y):null;
+  const cname_map={W:'white',Y:'yellow',R:'red',G:'green',B:'blue'};
+  if(c){el.style.background=c.bg;el.style.color=c.fg;el.textContent=`${c.mnemonic} – ${t('queen.color.'+cname_map[c.mnemonic])}`;}
+  else{el.style.background='var(--s2)';el.style.color='var(--dim)';el.textContent='–';}
+}
+
+function originLabel(o){ return t('origin.'+o)||''; }
+
+function readOriginData(){
+  if(!currentOrigin) return null;
+  const base={type:currentOrigin,date:document.getElementById('hiveOriginDate').value||null};
+  if(currentOrigin==='oddelek'||currentOrigin==='roj-vlastni')
+    return{...base,srcHiveId:document.getElementById('hiveOriginSrcHive').value||null};
+  if(currentOrigin==='chovatel'||currentOrigin==='koupeno')
+    return{...base,breeder:document.getElementById('hiveOriginBreeder').value.trim(),
+      contact:document.getElementById('hiveOriginBreederContact').value.trim()};
+  if(currentOrigin==='roj-divoky')
+    return{...base,place:document.getElementById('hiveOriginPlace').value.trim()};
+  if(currentOrigin==='jine')
+    return{...base,other:document.getElementById('hiveOriginOther').value.trim()};
+  return base;
+}
+
+function fillOriginModal(h){
+  const ov=h?.origin||null;
+  currentOrigin=ov?.type||null;
+  document.querySelectorAll('#originGrid .type-btn').forEach(b=>b.classList.toggle('active',b.dataset.o===currentOrigin));
+  // hide all conditional groups first
+  ['originSrcHiveGroup','originBreederGroup','originPlaceGroup','originOtherGroup'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('hiveOriginDate').value=ov?.date||'';
+  if(currentOrigin) setOrigin(currentOrigin);
+  // fill values
+  document.getElementById('hiveOriginSrcHive').value=ov?.srcHiveId||'';
+  document.getElementById('hiveOriginBreeder').value=ov?.breeder||'';
+  document.getElementById('hiveOriginBreederContact').value=ov?.contact||'';
+  document.getElementById('hiveOriginPlace').value=ov?.place||'';
+  document.getElementById('hiveOriginOther').value=ov?.other||'';
+}
+
+function openHiveModal(id=null){
+  editHiveId=id;
+  const h=id?data.hives.find(x=>x.id===id):null;
+  document.getElementById('hiveModalTitle').textContent=h?t('hive_modal.edit'):t('hive_modal.new');
+  document.getElementById('hiveName').value=h?.name||'';
+  document.getElementById('hiveType').value=h?.type||'Warré';
+  document.getElementById('hiveStatus').value=h?.status||'aktivní';
+  document.getElementById('hiveNote').value=h?.note||'';
+  document.getElementById('hiveInitBoxes').value=h?(h.nastavky?.length||0):2;
+  document.getElementById('hiveInitBoxes').disabled=!!h;
+  document.getElementById('initBoxesGroup').style.display=h?'none':'';
+  fillSelect('hiveStanId',h?.stanId,false,true);
+  // fill src hive select (exclude self)
+  const srcSel=document.getElementById('hiveOriginSrcHive');
+  srcSel.innerHTML=`<option value="">${t('hive_modal.src_hive_placeholder')}</option>`;
+  data.hives.filter(x=>x.id!==id).forEach(hv=>{
+    const o=document.createElement('option'); o.value=hv.id; o.textContent=hv.name; srcSel.appendChild(o);
+  });
+  fillOriginModal(h);
+  // Queen fields – show simplified section for new hive, full profile for edit
+  const q=h?.queen||{};
+  document.getElementById('queenNewSection').style.display=id?'none':'';
+  document.getElementById('queenEditSection').style.display=id?'':'none';
+  if(id){
+    // Editing existing hive – full profile
+    _queenStatus=q.stav||'přítomna'; _queenZnacena=q.znacena||'ne'; _queenOstrizena=q.ostrizena||'ne';
+    document.getElementById('hiveQueenYearEdit').value=q.rok||'';
+    document.getElementById('hiveQueenOrigin').value=q.puvod||'neznámý';
+    document.getElementById('hiveQueenBreeder').value=q.breeder||'';
+    document.querySelectorAll('[data-q]').forEach(b=>b.classList.toggle('active',b.dataset.q===_queenStatus));
+    document.querySelectorAll('#queenEditSection [data-qz]').forEach(b=>b.classList.toggle('active',b.dataset.qz===_queenZnacena));
+    document.querySelectorAll('[data-qo]').forEach(b=>b.classList.toggle('active',b.dataset.qo===_queenOstrizena));
+    updateQueenColorEdit();
+  } else {
+    // New hive – simplified acquisition view
+    _queenKlade=q.klade||'ano'; _queenInfo=q.zdrojInfo||'dle chovatele'; _queenZnacena=q.znacena||'ne';
+    document.getElementById('hiveQueenYear').value=q.rok||'';
+    document.querySelectorAll('#queenNewSection [data-qk]').forEach(b=>b.classList.toggle('active',b.dataset.qk===_queenKlade));
+    document.querySelectorAll('#queenNewSection [data-qi]').forEach(b=>b.classList.toggle('active',b.dataset.qi===_queenInfo));
+    document.querySelectorAll('#queenNewSection [data-qz]').forEach(b=>b.classList.toggle('active',b.dataset.qz===_queenZnacena));
+    updateQueenColor();
+  }
+  openModal('hiveModal');
+}
+
+async function saveHive(){
+  const name=document.getElementById('hiveName').value.trim();
+  if(!name){alert('Zadej název úlu');return;}
+  try{
+  const origin=readOriginData();
+  const queen=editHiveId?{
+    rok:parseInt(document.getElementById('hiveQueenYearEdit').value)||null,
+    stav:_queenStatus, znacena:_queenZnacena, ostrizena:_queenOstrizena,
+    puvod:document.getElementById('hiveQueenOrigin').value,
+    breeder:document.getElementById('hiveQueenBreeder').value.trim()||null,
+  }:{
+    rok:parseInt(document.getElementById('hiveQueenYear').value)||null,
+    klade:_queenKlade, zdrojInfo:_queenInfo, znacena:_queenZnacena,
+    puvod:currentOrigin==='koupeno'?'koupena':currentOrigin==='chovatel'?'zavedena':'neznámý',
+    breeder:(currentOrigin==='chovatel'||currentOrigin==='koupeno')
+      ?document.getElementById('hiveOriginBreeder').value.trim()||null:null,
+  };
+  if(editHiveId){
+    const stanId=document.getElementById('hiveStanId').value||null;
+    sb(await supa.from('hives').update({
+      name, type:document.getElementById('hiveType').value,
+      status:document.getElementById('hiveStatus').value,
+      stan_id:stanId,
+      note:document.getElementById('hiveNote').value.trim(),
+      origin, queen,
+      updated_at:new Date().toISOString(),
+    }).eq('id',editHiveId));
+  } else {
+    const n=parseInt(document.getElementById('hiveInitBoxes').value)||0;
+    const nastavky=Array.from({length:n},()=>({id:uid(),dateAdded:today()}));
+    const newHiveId=uid();
+    const stanId=document.getElementById('hiveStanId').value||null;
+    const insRes = await supa.from('hives').insert({
+      id:newHiveId, user_id:currentUser.id,
+      name, type:document.getElementById('hiveType').value,
+      status:document.getElementById('hiveStatus').value,
+      stan_id:stanId,
+      note:document.getElementById('hiveNote').value.trim(),
+      nastavky, origin, queen,
+    });
+    sb(insRes);
+
+    // ── Automatický první záznam „Převzetí" pro od chovatele / koupeno
+    if(currentOrigin==='chovatel'||currentOrigin==='koupeno'){
+      const varDatum=document.getElementById('prevVarroaDatum').value;
+      const varCim=document.getElementById('prevVarroaCim').value.trim();
+      const pozn=document.getElementById('prevPoznamka').value.trim();
+      const breeder=document.getElementById('hiveOriginBreeder').value.trim();
+      const contact=document.getElementById('hiveOriginBreederContact').value.trim();
+      const noteParts=[
+        breeder&&`${t('prev.from')}${breeder}${contact?' ('+contact+')':''}`,
+        `${t('prev.sila')}${_prevSila}/5`,
+        `${t('prev.zdrav')}${_prevZdrav}`,
+        varDatum&&`${t('prev.varroa')}${fmtDate(varDatum)}${varCim?' – '+varCim:''}`,
+        pozn&&`${t('prev.note')}${pozn}`,
+      ].filter(Boolean).join('\n');
+      sb(await supa.from('records').insert({
+        id:uid(), user_id:currentUser.id, hive_id:newHiveId,
+        date:origin?.date||today(),
+        type:'prevzeti',
+        data:{sila:_prevSila,zdravList:_prevZdrav,varroaDatum:varDatum||null,varroaCim:varCim||null,
+              breeder:breeder||null,contact:contact||null},
+        notes:noteParts,
+      }));
+    }
+  }
+  await loadAllData();
+  closeModal('hiveModal');
+  if(currentView==='detail') renderDetail(); else renderHives();
+  }catch(e){
+    console.error('saveHive error:', e);
+    const errDiv=document.getElementById('hiveModalError')||Object.assign(document.createElement('div'),{id:'hiveModalError',style:'color:red;padding:8px;font-size:.85rem;'});
+    errDiv.textContent='❌ '+e.message;
+    if(!document.getElementById('hiveModalError')) document.querySelector('#hiveModal .form-actions').before(errDiv);
+  }
+}
+function editCurrentHive(){ openHiveModal(currentHiveId); }
+async function deleteCurrentHive(){
+  const h=_state.hives.find(x=>x.id===currentHiveId);
+  if(!confirm(t('confirm.delete_hive',{name:h.name}))) return;
+  const now=new Date().toISOString();
+  await Promise.all([
+    supa.from('hives').update({deleted_at:now}).eq('id',currentHiveId),
+    supa.from('records').update({deleted_at:now}).eq('hive_id',currentHiveId),
+  ]);
+  await loadAllData();
+  showView('uly');
+}
+
+// ════════════════════════════
+//  HIVE DETAIL
+// ════════════════════════════
+function renderDetail(){
+  const h=data.hives.find(x=>x.id===currentHiveId);
+  if(!h){showView('uly');return;}
+  document.getElementById('detailName').textContent=`${h.type==='Warré'?'🏚️':'🏠'} ${h.name}`;
+  document.getElementById('detailSub').textContent=[getStanName(h.stanId),h.type,h.status].filter(Boolean).join(' · ');
+  // origin badge
+  let originEl=document.getElementById('detailOrigin');
+  if(!originEl){
+    originEl=document.createElement('div');
+    originEl.id='detailOrigin';
+    originEl.style.cssText='font-size:.75rem;color:var(--amber);margin-top:4px';
+    document.getElementById('detailSub').after(originEl);
+  }
+  if(h.origin?.type){
+    const lbl=originLabel(h.origin.type);
+    const srcHive=h.origin.srcHiveId?data.hives.find(x=>x.id===h.origin.srcHiveId):null;
+    const extra=[
+      srcHive&&`${t('detail.origin_from_hive_detail')}${srcHive.name}`,
+      h.origin.breeder&&`${h.origin.breeder}`,
+      h.origin.contact&&`(${h.origin.contact})`,
+      h.origin.place&&`${t('detail.origin_place_detail')}${h.origin.place}`,
+      h.origin.other,
+      h.origin.date&&`· ${fmtDate(h.origin.date)}`,
+    ].filter(Boolean).join(' ');
+    originEl.textContent=`${t('detail.origin_prefix')}${lbl}${extra?' – '+extra:''}`;
+  } else {
+    originEl.textContent='';
+  }
+  // Queen info row
+  let queenEl=document.getElementById('detailQueenRow');
+  if(!queenEl){
+    queenEl=document.createElement('div');
+    queenEl.id='detailQueenRow';
+    queenEl.style.cssText='margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap';
+    document.getElementById('detailSub').closest('.detail-hdr').after(queenEl);
+  }
+  const q=h.queen||{};
+  if(q.rok||q.stav){
+    const qc=q.rok?queenColor(q.rok):null;
+    const age=queenAge(q.rok);
+    const ageWarn=age!==null&&age>=2;
+    const statusColor=q.stav==='přítomna'?'#7ab648':q.stav==='chybí'?'#e05a2b':'#e8891a';
+    const dot=qc?`<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:${qc.bg};color:${qc.fg};font-size:.7rem;font-weight:800;flex-shrink:0">${qc.mnemonic}</span>`:'';
+    const ageLabel=age!==null?(age===1?t('detail.age_year_1',{n:age}):age<5?t('detail.age_year_24',{n:age}):t('detail.age_year_5',{n:age})):'';
+    queenEl.innerHTML=`
+      ${dot}
+      <span style="font-size:.8rem;font-weight:600;color:var(--gold)">👑 Matka${q.rok?` ${q.rok}`:''}${age!==null?` (${ageLabel})`:''}
+      ${ageWarn?`<span style="background:#4a2a08;color:var(--amber);font-size:.65rem;padding:1px 6px;border-radius:10px;margin-left:4px">${t('detail.queen_old')}</span>`:''}</span>
+      <span style="font-size:.75rem;padding:2px 8px;border-radius:10px;background:${statusColor}22;color:${statusColor}">${q.stav||t('detail.queen_unknown_status')}</span>
+      ${q.puvod&&q.puvod!=='neznámý'?`<span style="font-size:.72rem;color:var(--dim)">${esc(q.puvod)}</span>`:''}
+      ${q.race?`<span style="font-size:.72rem;color:var(--dim)">· ${esc(q.race)}</span>`:''}
+      ${q.breeder?`<span style="font-size:.72rem;color:var(--dim)">· ${esc(q.breeder)}</span>`:''}
+      ${q.znacena==='ano'?`<span style="font-size:.7rem;color:var(--dim)">${t('detail.queen_marked')}</span>`:''}
+      ${q.ostrizena==='ano'?`<span style="font-size:.7rem;color:var(--dim)">${t('detail.queen_clipped')}</span>`:''}
+    `;
+  } else {
+    queenEl.innerHTML=`<span style="font-size:.75rem;color:var(--dim)">${t('detail.queen_none')}</span>`;
+  }
+  const recs=data.records.filter(r=>r.hiveId===currentHiveId).sort((a,b)=>b.date.localeCompare(a.date));
+  const last=recs[0]; const boxes=h.nastavky?.length||0;
+  document.getElementById('statRec').textContent=recs.length;
+  document.getElementById('statBoxes').textContent=boxes;
+  document.getElementById('statDays').textContent=last?daysAgo(last.date):'–';
+  renderTower(h);
+  renderWeightChart(recs);
+  renderTimeline(recs);
+}
+
+function renderTower(h){
+  const ns=h.nastavky||[];
+  document.getElementById('towerCount').textContent=ns.length?`${ns.length} ks`:'';
+  const viz=document.getElementById('towerViz');
+  if(!ns.length){
+    viz.innerHTML=`<div class="tower-empty">${t('tower.empty')}</div>`;
+    return;
+  }
+  viz.innerHTML=ns.map((b,i)=>{
+    const isTop=i===0, isBot=i===ns.length-1;
+    const lbl=isTop?t('tower.top'):isBot&&ns.length>1?t('tower.bottom'):t('tower.middle');
+    const cls=isTop?'top-box':isBot?'bot-box':'mid-box';
+    return`<div class="tower-box ${cls}">
+      <span class="tb-num">${i+1}</span>
+      <span class="tb-label">${lbl}</span>
+      <span class="tb-date">${fmtDate(b.dateAdded)}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderWeightChart(recs){
+  const wr=recs.filter(r=>r.type==='vaha'&&r.data?.kg).sort((a,b)=>a.date.localeCompare(b.date));
+  const cw=document.getElementById('chartWrap');
+  if(wr.length<2){cw.style.display='none';return;}
+  cw.style.display='';
+  const W=300,H=90,px=28,py=14;
+  const vals=wr.map(r=>+r.data.kg);
+  const mn=Math.min(...vals),mx=Math.max(...vals),range=mx-mn||1;
+  const pts=vals.map((v,i)=>[px+(W-2*px)*i/(vals.length-1), H-py-(v-mn)/range*(H-2*py)]);
+  const dots=pts.map(([x,y],i)=>
+    `<circle cx="${x}" cy="${y}" r="4" fill="var(--amber)"/>
+     <text x="${x}" y="${y-8}" fill="var(--dim)" font-size="9" text-anchor="middle">${vals[i]}kg</text>
+     <text x="${x}" y="${H-2}" fill="var(--dim)" font-size="8" text-anchor="middle">${wr[i].date.slice(5).replace('-','.')}</text>`
+  ).join('');
+  document.getElementById('chartArea').innerHTML=
+    `<svg class="chart-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+      <polyline points="${pts.map(p=>p.join(',')).join(' ')}" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linejoin="round"/>
+      ${dots}
+    </svg>`;
+}
+
+function renderTimeline(recs){
+  const tl=document.getElementById('timeline');
+  if(!recs.length){tl.innerHTML=`<div class="empty"><div class="ei">📭</div><p>${t('detail.no_records')}</p></div>`;return;}
+  tl.innerHTML=recs.map(r=>{
+    const{icon,label,color}=recMeta(r);
+    const sum=recSummary(r);
+    return`<div class="tl-item" style="border-color:${color}">
+      <div class="tl-top">
+        <div class="tl-type" style="color:${color}">${icon} ${label}</div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="tl-date">${fmtDate(r.date)}</span>
+          <button class="tl-del" onclick="deleteRecord('${r.id}')">🗑</button>
+        </div>
+      </div>
+      ${sum?`<div class="tl-body">${esc(sum)}</div>`:''}
+      ${r.notes?`<div class="tl-body" style="color:var(--dim)">📝 ${esc(r.notes)}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+async function deleteRecord(id){
+  if(!confirm(t('confirm.delete_record'))) return;
+  await supa.from('records').update({deleted_at:new Date().toISOString()}).eq('id',id);
+  await loadAllData();
+  renderDetail();
+}
+
+// ════════════════════════════
+//  RECORD META
+// ════════════════════════════
+const REC={
+  cesno:   {icon:'🚪',color:'#7ab648'},
+  vaha:    {icon:'⚖️',color:'#f5a623'},
+  nadireni:{icon:'📦',color:'#e8891a'},
+  sklizen: {icon:'🍯',color:'#ffd700'},
+  krmeni:  {icon:'🍬',color:'#c8a96a'},
+  rojeni:  {icon:'✈️',color:'#e05a2b'},
+  polstar: {icon:'🧶',color:'#a07850'},
+  otoceni: {icon:'↕️',color:'#7ab648'},
+  poznamka:{icon:'📝',color:'#c8a96a'},
+  matka:   {icon:'👑',color:'#ffd700'},
+  prevzeti:{icon:'📋',color:'#7ab648'},
+};
+function recMeta(r){ const m=REC[r.type]; return m?{icon:m.icon,label:t('rec.'+r.type),color:m.color}:{icon:'📋',label:t('rec.default'),color:'var(--dim)'}; }
+
+function recSummary(r){
+  const d=r.data||{};
+  switch(r.type){
+    case'cesno':  return[d.aktivita&&`${t('sum.aktivita')}${d.aktivita}`,d.pyl&&`${t('sum.pyl')}${d.pyl}`,d.vousy==='ano'&&t('sum.vousy_warn')].filter(Boolean).join(' · ');
+    case'vaha':   return d.kg?`${d.kg} kg`:'';
+    case'nadireni':return d.pocet?t('sum.boxes_added',{n:d.pocet}):'';
+    case'sklizen':return d.pocet?t('sum.boxes_harvested',{n:d.pocet}):'';
+    case'krmeni': return[d.typ,d.mnozstvi].filter(Boolean).join(' – ');
+    case'rojeni': return[d.typ,d.kam&&`→ ${d.kam}`].filter(Boolean).join(' ');
+    case'polstar':return d.stav||'';
+    case'otoceni':return d.smer||'';
+    case'matka':{
+      const ev={potvrzena:t('sum.queen_confirmed'),supersedura:t('sum.queen_supersedura'),
+        'po roji':t('sum.queen_after_swarm'),zavedena:t('sum.queen_introduced'),koupena:t('sum.queen_purchased'),
+        chybí:t('sum.queen_missing')}[d.udalost]||d.udalost||'';
+      const rok=d.rok?` · ${t('sum.queen_year')}${d.rok}`:'';
+      const qc=d.rok?queenColor(d.rok):null;
+      const barva=qc?` · ${t('queen.color.'+{W:'white',Y:'yellow',R:'red',G:'green',B:'blue'}[qc.mnemonic])}`:'';
+      const zn=[d.znacena==='ano'&&t('sum.queen_marked'),d.ostrizena==='ano'&&t('sum.queen_clipped')].filter(Boolean).join(', ');
+      const koup=[d.breeder,d.race,d.contact].filter(Boolean).join(' · ');
+      return[ev+rok+barva,zn,koup].filter(Boolean).join(' · ');
+    }
+    case'prevzeti':{
+      const parts=[t('sum.sila',{n:d.sila||'?'}),`${t('sum.zdrav_list')}${d.zdravList||'?'}`,
+        d.varroaDatum&&`${t('sum.varroa_treated')}${fmtDate(d.varroaDatum)}${d.varroaCim?' – '+d.varroaCim:''}`,
+        d.breeder&&`${t('sum.from')}${d.breeder}`].filter(Boolean);
+      return parts.join(' · ');
+    }
+    default: return'';
+  }
+}
+
+// ════════════════════════════
+//  RECORD MODAL
+// ════════════════════════════
+let recType=null, recFields={};
+
+function openRecordModal(){
+  const hiveId=currentHiveId;
+  fillSelect('recHiveSelect',hiveId);
+  document.getElementById('recHiveGroup').style.display=(currentView==='detail')?'none':'';
+  document.getElementById('recDate').value=today();
+  recType=null; recFields={};
+  document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.dyn-form').forEach(f=>f.classList.remove('visible'));
+  document.getElementById('recNotes').value='';
+  openModal('recordModal');
+}
+
+function setRecType(typ){
+  recType=typ; recFields={};
+  document.querySelectorAll('.type-btn').forEach(b=>b.classList.toggle('active',b.dataset.type===typ));
+  document.querySelectorAll('.dyn-form').forEach(f=>f.classList.remove('visible'));
+  document.getElementById(`df-${typ}`)?.classList.add('visible');
+}
+
+function togField(btn,field){
+  btn.closest('.tog-row').querySelectorAll('.tog-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  recFields[field]=btn.dataset.v;
+}
+
+async function saveRecord(){
+  let hiveId=currentHiveId;
+  if(currentView!=='detail') hiveId=document.getElementById('recHiveSelect').value;
+  if(!hiveId){alert(t('alert.hive_required'));return;}
+  if(!recType){alert(t('alert.type_required'));return;}
+  const date=document.getElementById('recDate').value;
+  if(!date){alert(t('alert.date_required'));return;}
+  let d2={};
+  let hiveUpdate=null; // any changes to the hive row (nastavky, queen)
+  switch(recType){
+    case'cesno':  d2={aktivita:recFields.aktivita||null,pyl:recFields.pyl||null,vousy:recFields.vousy||'ne'}; break;
+    case'vaha':   d2={kg:document.getElementById('recKg').value||null}; if(!d2.kg){alert(t('alert.weight_required'));return;} break;
+    case'nadireni':{
+      const n=parseInt(document.getElementById('recNadirPocet').value)||1; d2={pocet:n};
+      const h=_state.hives.find(x=>x.id===hiveId);
+      if(h){
+        const newNastavky=[...(h.nastavky||[])];
+        for(let i=0;i<n;i++) newNastavky.push({id:uid(),dateAdded:date});
+        hiveUpdate={nastavky:newNastavky};
+        h.nastavky=newNastavky; // optimistic local update
+      }
+      break;
+    }
+    case'sklizen':{
+      const n=parseInt(document.getElementById('recSklizenPocet').value)||1; d2={pocet:n};
+      const h=_state.hives.find(x=>x.id===hiveId);
+      if(h){
+        const newNastavky=(h.nastavky||[]).slice(n);
+        hiveUpdate={nastavky:newNastavky};
+        h.nastavky=newNastavky; // optimistic local update
+      }
+      break;
+    }
+    case'krmeni': d2={typ:document.getElementById('recKrmType').value,mnozstvi:document.getElementById('recKrmMn').value.trim()}; break;
+    case'rojeni': d2={typ:recFields.rojTyp||null,kam:document.getElementById('recRojKam').value.trim()}; break;
+    case'polstar':d2={stav:document.getElementById('recPolstar').value}; break;
+    case'otoceni':d2={smer:recFields.otSmer||null}; break;
+    case'matka':{
+      const rok=parseInt(document.getElementById('recQueenYear').value)||null;
+      const isKoupena=recFields.mUdalost==='koupena';
+      d2={
+        udalost:recFields.mUdalost||null, rok,
+        znacena:recFields.mZnacena||'ne', ostrizena:recFields.mOstrizena||'ne',
+        ...(isKoupena&&{
+          breeder:document.getElementById('recQueenBreeder').value.trim()||null,
+          race:document.getElementById('recQueenRace').value||null,
+          contact:document.getElementById('recQueenBreederContact').value.trim()||null,
+        }),
+      };
+      const newQueenEvents=['supersedura','po roji','zavedena','koupena'];
+      const h=_state.hives.find(x=>x.id===hiveId);
+      if(newQueenEvents.includes(recFields.mUdalost)){
+        const puvod={'supersedura':'přirozená náhrada','po roji':'po roji','zavedena':'zavedena',
+          'koupena':'zavedena'}[recFields.mUdalost]||'neznámý';
+        const newQueen={rok,stav:'přítomna',znacena:recFields.mZnacena||'ne',
+          ostrizena:recFields.mOstrizena||'ne', puvod,
+          ...(isKoupena&&{race:document.getElementById('recQueenRace').value||null,
+            breeder:document.getElementById('recQueenBreeder').value.trim()||null})};
+        hiveUpdate={queen:newQueen};
+        if(h) h.queen=newQueen;
+      } else if(recFields.mUdalost==='chybí'){
+        if(h&&h.queen){ h.queen={...h.queen,stav:'chybí'}; hiveUpdate={queen:h.queen}; }
+      } else if(recFields.mUdalost==='potvrzena'){
+        if(h&&h.queen){ h.queen={...h.queen,stav:'přítomna'}; hiveUpdate={queen:h.queen}; }
+      }
+      break;
+    }
+  }
+  try{
+    const results=await Promise.all([
+      supa.from('records').insert({
+        id:uid(), user_id:currentUser.id, hive_id:hiveId,
+        date, type:recType, data:d2,
+        notes:document.getElementById('recNotes').value.trim(),
+      }),
+      ...(hiveUpdate?[supa.from('hives').update({...hiveUpdate, updated_at:new Date().toISOString()}).eq('id',hiveId)]:[]),
+    ]);
+    results.forEach(r=>sb(r));
+    await loadAllData();
+    closeModal('recordModal');
+    if(currentView==='detail') renderDetail(); else renderDash();
+  }catch(e){alert('❌ Chyba při ukládání záznamu:\n'+e.message);console.error(e);}
+}
+
+// ════════════════════════════
+//  STANOVIŠTĚ
+// ════════════════════════════
+let editStanId=null;
+function openStanModal(id=null){
+  editStanId=id;
+  const s=id?data.stanoviste.find(x=>x.id===id):null;
+  document.getElementById('stanModalTitle').textContent=s?t('stan_modal.edit'):t('stan_modal.new');
+  document.getElementById('stanNum').value=s?.number||'';
+  document.getElementById('stanName').value=s?.name||'';
+  document.getElementById('stanAddr').value=s?.address||'';
+  document.getElementById('stanGps').value=s?.gps||'';
+  document.getElementById('stanNote').value=s?.note||'';
+  openModal('stanModal');
+}
+async function saveStan(){
+  const num=document.getElementById('stanNum').value.trim();
+  const name=document.getElementById('stanName').value.trim();
+  if(!num&&!name){alert(t('alert.stan_required'));return;}
+  const obj={number:num,name:name||`${t('stan_modal.default_name')}${num}`,address:document.getElementById('stanAddr').value.trim(),
+    gps:document.getElementById('stanGps').value.trim(),note:document.getElementById('stanNote').value.trim()};
+  try{
+    if(editStanId){
+      sb(await supa.from('stanoviste').update({...obj, updated_at:new Date().toISOString()}).eq('id',editStanId));
+    } else {
+      sb(await supa.from('stanoviste').insert({id:uid(), user_id:currentUser.id, ...obj}));
+    }
+    await loadAllData();
+    closeModal('stanModal'); renderStan();
+  }catch(e){alert('❌ Chyba při ukládání stanoviště:\n'+e.message);console.error(e);}
+}
+function renderStan(){
+  const list=document.getElementById('stanList');
+  if(!data.stanoviste.length){list.innerHTML=`<div class="empty"><div class="ei">📍</div><p>${t('stan.empty')}</p></div>`;return;}
+  list.innerHTML=data.stanoviste.map(s=>{
+    const hives=data.hives.filter(h=>h.stanId===s.id);
+    const pills=hives.map(h=>`<span class="badge warn" onclick="event.stopPropagation();openHiveDetail('${h.id}')" style="cursor:pointer">🐝 ${esc(h.name)}</span>`).join('');
+    return`<div class="stan-card" onclick="openStanModal('${s.id}')">
+      <div class="stan-hdr"><div><div class="stan-name">${esc(s.name)}</div>${s.address?`<div class="stan-sub">📍 ${esc(s.address)}</div>`:''}</div>
+      <span class="stan-num">${t('stan.num_prefix')}${esc(s.number)}</span></div>
+      ${s.gps?`<div class="stan-sub" style="margin-top:4px">🗺 ${esc(s.gps)}</div>`:''}
+      <div class="stan-hives">${pills||`<span style="font-size:.72rem;color:var(--dim)">${t('stan.no_hives')}</span>`}</div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openStanModal('${s.id}')">${t('stan.edit')}</button>
+        <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteStan('${s.id}')">${t('stan.delete')}</button>
+      </div></div>`;
+  }).join('');
+}
+async function deleteStan(id){
+  const s=_state.stanoviste.find(x=>x.id===id);
+  if(!confirm(t('confirm.delete_stan',{name:s.name}))) return;
+  const now=new Date().toISOString();
+  // soft-delete the stanoviste and unlink hives
+  const hivesToUnlink=_state.hives.filter(h=>h.stanId===id);
+  const ops=[supa.from('stanoviste').update({deleted_at:now}).eq('id',id)];
+  for(const h of hivesToUnlink){
+    ops.push(supa.from('hives').update({stan_id:null, updated_at:now}).eq('id',h.id));
+  }
+  await Promise.all(ops);
+  await loadAllData();
+  renderStan();
+}
+function getStanName(id){ const s=data.stanoviste.find(x=>x.id===id); return s?`${s.number}: ${s.name}`:''; }
+
+// ════════════════════════════
+//  TASKS
+// ════════════════════════════
+function openTaskModal(){
+  fillSelect('taskHive',null,false,true);
+  document.getElementById('taskTitle').value='';
+  document.getElementById('taskDate').value='';
+  openModal('taskModal');
+}
+async function saveTask(){
+  const title=document.getElementById('taskTitle').value.trim();
+  if(!title){alert(t('alert.task_required'));return;}
+  const hiveId=document.getElementById('taskHive').value||null;
+  const dueDate=document.getElementById('taskDate').value||null;
+  try{
+    sb(await supa.from('tasks').insert({
+      id:uid(), user_id:currentUser.id,
+      title, hive_id:hiveId, due_date:dueDate, done:false,
+    }));
+    await loadAllData();
+    closeModal('taskModal'); renderTasks();
+  }catch(e){alert('❌ Chyba při ukládání úkolu:\n'+e.message);console.error(e);}
+}
+function renderTasks(){
+  const list=document.getElementById('taskList');
+  const sorted=[...data.tasks].sort((a,b)=>(a.done!==b.done)?(a.done?1:-1):(a.date&&b.date?a.date.localeCompare(b.date):0));
+  if(!sorted.length){list.innerHTML=`<div class="empty"><div class="ei">✅</div><p>${t('tasks.empty')}</p></div>`;return;}
+  list.innerHTML=sorted.map(tk=>{
+    const h=tk.hiveId?data.hives.find(x=>x.id===tk.hiveId):null;
+    const ov=tk.date&&!tk.done&&new Date(tk.date)<new Date();
+    return`<div class="task-item${tk.done?' done':''}">
+      <button class="task-check" onclick="toggleTask('${tk.id}')">${tk.done?'✓':''}</button>
+      <div class="task-body"><div class="task-title">${esc(tk.title)}</div>
+      <div class="task-sub">${h?`🐝 ${esc(h.name)}`:''}${tk.date?` · <span${ov?' style="color:var(--danger)"':''}>${fmtDate(tk.date)}</span>`:''}</div></div>
+      <button class="task-del" onclick="deleteTask('${tk.id}')">🗑</button></div>`;
+  }).join('');
+}
+async function toggleTask(id){
+  const tk=_state.tasks.find(x=>x.id===id);
+  const newDone=!tk.done;
+  await supa.from('tasks').update({done:newDone, done_at:newDone?new Date().toISOString():null}).eq('id',id);
+  await loadAllData();
+  renderTasks();
+}
+async function deleteTask(id){
+  await supa.from('tasks').update({deleted_at:new Date().toISOString()}).eq('id',id);
+  await loadAllData();
+  renderTasks();
+}
+
+// ════════════════════════════
+//  PROFILE
+// ════════════════════════════
+function setProfTyp(typ){
+  profile._typ=typ; const iF=typ==='firma';
+  document.getElementById('profFirmaGroup').style.display=iF?'':'none';
+  document.getElementById('profJmenoLbl').textContent=iF?t('profile.first_name_resp'):t('profile.first_name_label');
+  document.getElementById('profPrijmeniLbl').textContent=iF?t('profile.last_name_resp'):t('profile.last_name_label');
+  document.getElementById('profRodLbl').textContent=iF?t('profile.ico_label'):t('profile.birth_label');
+  document.getElementById('profRodCislo').placeholder=iF?'12345678':'XXXXXX/XXXX';
+  document.querySelectorAll('#profTypRow .tog-btn').forEach(b=>b.classList.toggle('active',b.dataset.t===typ));
+}
+async function saveProfile(){
+  profile={_typ:profile._typ||'osoba',firma:document.getElementById('profFirma').value.trim(),
+    jmeno:document.getElementById('profJmeno').value.trim(),prijmeni:document.getElementById('profPrijmeni').value.trim(),
+    regCislo:document.getElementById('profRegCislo').value.trim(),rodCislo:document.getElementById('profRodCislo').value.trim(),
+    adresa:document.getElementById('profAdresa').value.trim(),telefon:document.getElementById('profTelefon').value.trim(),
+    email:document.getElementById('profEmail').value.trim()};
+  // Persist to Supabase profiles table
+  if(currentUser){
+    await supa.from('profiles').upsert({
+      id: currentUser.id,
+      typ: profile._typ||'osoba',
+      firma: profile.firma||null,
+      jmeno: profile.jmeno||null,
+      prijmeni: profile.prijmeni||null,
+      reg_cislo: profile.regCislo||null,
+      rod_cislo: profile.rodCislo||null,
+      adresa: profile.adresa||null,
+      telefon: profile.telefon||null,
+      email: profile.email||null,
+      updated_at: new Date().toISOString(),
+    });
+  }
+  updateProfileBtn(); closeModal('profileModal');
+}
+function openProfileModal(){
+  setProfTyp(profile._typ||'osoba');
+  ['profFirma','profJmeno','profPrijmeni','profRegCislo','profRodCislo','profAdresa','profTelefon','profEmail']
+    .forEach(id=>{ document.getElementById(id).value=profile[id.replace('prof','').charAt(0).toLowerCase()+id.replace('prof','').slice(1)]||''; });
+  // re-map keys
+  document.getElementById('profFirma').value=profile.firma||'';
+  document.getElementById('profJmeno').value=profile.jmeno||'';
+  document.getElementById('profPrijmeni').value=profile.prijmeni||'';
+  document.getElementById('profRegCislo').value=profile.regCislo||'';
+  document.getElementById('profRodCislo').value=profile.rodCislo||'';
+  document.getElementById('profAdresa').value=profile.adresa||'';
+  document.getElementById('profTelefon').value=profile.telefon||'';
+  document.getElementById('profEmail').value=profile.email||'';
+  // sync language buttons
+  document.querySelectorAll('[data-lang-btn]').forEach(b=>b.classList.toggle('active',b.dataset.langBtn===currentLang));
+  openModal('profileModal');
+}
+function updateProfileBtn(){
+  const has=profile.firma||profile.jmeno||profile.prijmeni;
+  document.querySelector('.profile-btn').classList.toggle('filled',!!has);
+  const init=has?(profile._typ==='firma'&&profile.firma?profile.firma.substring(0,2).toUpperCase()
+    :(profile.jmeno?.[0]||'')+(profile.prijmeni?.[0]||'')||'👤'):'👤';
+  document.getElementById('profileAvatar').textContent=init;
+}
+
+// ════════════════════════════
+//  REPORT
+// ════════════════════════════
+function generateReport(){
+  const p=profile, dnes=fmtDate(today()), iF=p._typ==='firma';
+  const jmLbl=iF?t('report.name_resp'):t('report.name_person');
+  const rodLbl=iF?t('report.ico'):t('report.birth');
+  const jmVal=esc(((p.jmeno||'')+' '+(p.prijmeni||'')).trim())||'–';
+  let rows='';
+  const noStan=data.hives.filter(h=>!h.stanId);
+  const groups=[...data.stanoviste.map(s=>({s,hives:data.hives.filter(h=>h.stanId===s.id)})),
+    ...(noStan.length?[{s:null,hives:noStan}]:[])];
+  let n=0;
+  groups.forEach(({s,hives})=>{
+    const sl=s?`${t('report.stan_prefix')}${esc(s.number)} – ${esc(s.name)}${s.address?' ('+esc(s.address)+')':''}`:
+      t('report.no_stan');
+    rows+=`<tr><td colspan="5" class="sr"><strong>${sl}</strong></td></tr>`;
+    hives.forEach(h=>{
+      n++;
+      const recs=data.records.filter(r=>r.hiveId===h.id).sort((a,b)=>b.date.localeCompare(a.date));
+      const last=recs[0]; const da=last?daysAgo(last.date):null;
+      const ov=h.origin;
+      let originStr='–';
+      if(ov?.type){
+        const srcHive=ov.srcHiveId?data.hives.find(x=>x.id===ov.srcHiveId):null;
+        const parts=[originLabel(ov.type),srcHive&&`z: ${esc(srcHive.name)}`,ov.breeder&&esc(ov.breeder),
+          ov.place&&esc(ov.place),ov.other&&esc(ov.other),ov.date&&fmtDate(ov.date)].filter(Boolean);
+        originStr=parts.join(' · ');
+      }
+      rows+=`<tr><td>${n}</td><td><strong>${esc(h.name)}</strong></td><td>${esc(h.type)}</td>
+        <td>${esc(h.status)}</td><td>${originStr}</td><td>${last?fmtDate(last.date)+(da!==null?` (${da}${t('report.days_suffix')})`:''):'–'}</td></tr>`;
+    });
+  });
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html lang="${currentLang}"><head><meta charset="UTF-8"/>
+<title>Hlášení včelstev</title>
+<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:11pt;color:#111;padding:18mm}
+h1{font-size:15pt;text-align:center;margin-bottom:4px}.sub{text-align:center;color:#555;font-size:10pt;margin-bottom:16px}
+.tb{display:flex;gap:10px;margin-bottom:14px}.bb{padding:7px 16px;background:#eee;border:none;border-radius:6px;cursor:pointer}
+.bp{padding:7px 20px;background:#f5a623;border:none;border-radius:6px;cursor:pointer;font-weight:bold}
+table{width:100%;border-collapse:collapse;margin-bottom:16px}
+th{background:#2d1f0e;color:#fff;padding:6px 9px;text-align:left;font-size:10pt}
+td{padding:5px 9px;border-bottom:1px solid #eee;font-size:10pt;vertical-align:top}
+.it td:first-child{font-weight:bold;width:40%;color:#555}
+tr:nth-child(even) td{background:#fafafa}.sr td{background:#fff8e7;color:#7a4f00;padding:7px 9px;border-top:2px solid #f5a623}
+.ft{display:flex;justify-content:space-between;align-items:flex-end;font-size:9pt;color:#888;margin-top:20px}
+.sg{display:inline-block;width:180px;border-top:1px solid #333;text-align:center;padding-top:4px}
+@media print{.tb{display:none}}</style></head><body>
+<div class="tb"><button class="bb" onclick="window.close()">${t('report.back')}</button>
+<button class="bp" onclick="window.print()">${t('report.print')}</button></div>
+<h1>${t('report.title')}</h1><div class="sub">${t('report.date_prefix')}${dnes}</div>
+<table class="it"><tr><th colspan="2">${t('report.breeder_info')}</th></tr>
+${iF?`<tr><td>${t('report.company_name')}</td><td><strong>${esc(p.firma)||'–'}</strong></td></tr>`:''}
+<tr><td>${jmLbl}</td><td>${jmVal}</td></tr>
+<tr><td>${t('report.reg_num')}</td><td>${esc(p.regCislo)||'–'}</td></tr>
+<tr><td>${rodLbl}</td><td>${esc(p.rodCislo)||'–'}</td></tr>
+<tr><td>${t('report.address')}</td><td>${esc(p.adresa)||'–'}</td></tr>
+<tr><td>${t('report.phone')}</td><td>${esc(p.telefon)||'–'}</td></tr>
+<tr><td>${t('report.email')}</td><td>${esc(p.email)||'–'}</td></tr></table>
+<p style="font-size:10pt;margin-bottom:12px">${t('report.total',{apiaries:data.stanoviste.length,hives:data.hives.length})}</p>
+<table><thead><tr><th>${t('report.col_num')}</th><th>${t('report.col_name')}</th><th>${t('report.col_type')}</th><th>${t('report.col_status')}</th><th>${t('report.col_origin')}</th><th>${t('report.col_last')}</th></tr></thead>
+<tbody>${rows||`<tr><td colspan="5" style="text-align:center;color:#999">${t('report.no_hives')}</td></tr>`}</tbody></table>
+<div class="ft"><span>${t('report.generated')}${dnes}</span><span class="sg">${t('report.signature')}</span></div>
+</body></html>`);
+  w.document.close();
+}
+
+// ════════════════════════════
+//  UTILS
+// ════════════════════════════
+// ════════════════════════════
+//  HISTORY DASHBOARD
+// ════════════════════════════
+function openHistoryModal(){
+  const h=data.hives.find(x=>x.id===currentHiveId);
+  if(!h) return;
+  const recs=[...data.records.filter(r=>r.hiveId===currentHiveId)].sort((a,b)=>a.date.localeCompare(b.date));
+
+  // ── Titulek
+  document.getElementById('histTitle').textContent=`${t('history.title_prefix')}${h.name} ${t('hist.title_suffix')}`;
+
+  // ── Stat boxy
+  const sklizne=recs.filter(r=>r.type==='sklizen');
+  const nadireni=recs.filter(r=>r.type==='nadireni');
+  const rojeni=recs.filter(r=>r.type==='rojeni');
+  const krmeni=recs.filter(r=>r.type==='krmeni');
+  const vaha=recs.filter(r=>r.type==='vaha'&&r.data?.kg);
+  const totalSklizeno=sklizne.reduce((s,r)=>s+(+r.data?.pocet||0),0);
+  const totalNadireno=nadireni.reduce((s,r)=>s+(+r.data?.pocet||0),0);
+  // věk úlu – od nejstaršího záznamu nebo od origin.date
+  const oldest=h.origin?.date||recs[0]?.date||null;
+  const vekDni=oldest?Math.floor((Date.now()-new Date(oldest))/86400000):null;
+  const vekStr=vekDni===null?'–':vekDni<60?`${vekDni} dní`:vekDni<730?`${Math.floor(vekDni/30)} měs.`:`${(vekDni/365).toFixed(1)} let`;
+
+  document.getElementById('histStats').innerHTML=`
+    <div class="stat-box"><div class="stat-val">${vekStr}</div><div class="stat-label">${t('hist.age')}</div></div>
+    <div class="stat-box"><div class="stat-val">${totalSklizeno}</div><div class="stat-label">${t('hist.harvested')}</div></div>
+    <div class="stat-box"><div class="stat-val">${rojeni.length}</div><div class="stat-label">${t('hist.swarms')}</div></div>
+    <div class="stat-box"><div class="stat-val">${krmeni.length}</div><div class="stat-label">${t('hist.feedings')}</div></div>
+    <div class="stat-box"><div class="stat-val">${totalNadireno}</div><div class="stat-label">${t('hist.nadireno')}</div></div>
+    <div class="stat-box"><div class="stat-val">${recs.length}</div><div class="stat-label">${t('hist.records')}</div></div>
+  `;
+
+  // ── Původ
+  const ob=document.getElementById('histOriginBox');
+  if(h.origin?.type){
+    ob.style.display='';
+    const srcHive=h.origin.srcHiveId?data.hives.find(x=>x.id===h.origin.srcHiveId):null;
+    const parts=[
+      originLabel(h.origin.type),
+      srcHive&&`${t('detail.origin_from_hive_detail')}${srcHive.name}`,
+      h.origin.breeder&&h.origin.breeder,
+      h.origin.contact&&`(${h.origin.contact})`,
+      h.origin.place&&`${t('detail.origin_place_detail')}${h.origin.place}`,
+      h.origin.other,
+      h.origin.date&&`${t('hist.acquired')}${fmtDate(h.origin.date)}`,
+    ].filter(Boolean).join('  ·  ');
+    document.getElementById('histOriginText').textContent=parts;
+  } else ob.style.display='none';
+
+  // ── Váhová křivka (celá historie, od nejstaršího)
+  const cb=document.getElementById('histChartBox');
+  if(vaha.length>=2){
+    cb.style.display='';
+    const W=300,H=100,px=30,py=16;
+    const vals=vaha.map(r=>+r.data.kg);
+    const mn=Math.min(...vals),mx=Math.max(...vals),range=mx-mn||1;
+    const pts=vals.map((v,i)=>[px+(W-2*px)*i/(vals.length-1),H-py-(v-mn)/range*(H-2*py)]);
+    const dots=pts.map(([x,y],i)=>
+      `<circle cx="${x}" cy="${y}" r="3.5" fill="var(--amber)"/>
+       <text x="${x}" y="${y-7}" fill="var(--dim)" font-size="8" text-anchor="middle">${vals[i]}kg</text>
+       <text x="${x}" y="${H}" fill="var(--dim)" font-size="7" text-anchor="middle">${vaha[i].date.slice(5).replace('-','.')}.${vaha[i].date.slice(2,4)}</text>`
+    ).join('');
+    document.getElementById('histChartArea').innerHTML=
+      `<svg width="100%" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+        <polyline points="${pts.map(p=>p.join(',')).join(' ')}" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linejoin="round"/>
+        ${dots}
+       </svg>`;
+  } else cb.style.display='none';
+
+  // ── Pohyby nástavků (nadíření + sklizně chronologicky)
+  const moves=[...nadireni,...sklizne].sort((a,b)=>a.date.localeCompare(b.date));
+  const bm=document.getElementById('histBoxMoves');
+  if(!moves.length){
+    bm.innerHTML=`<div style="font-size:.8rem;color:var(--dim);padding:4px 0">${t('hist.no_moves')}</div>`;
+  } else {
+    // running tally
+    let cur=0;
+    bm.innerHTML=moves.map(r=>{
+      const isNad=r.type==='nadireni';
+      const n=+r.data?.pocet||1;
+      const prev=cur;
+      cur=isNad?cur+n:Math.max(0,cur-n);
+      const arrow=isNad?'<span style="color:var(--ok)">▲</span>':'<span style="color:var(--amber)">▼</span>';
+      const bar=`<div style="display:flex;gap:2px;align-items:center;margin-top:3px">
+        ${Array.from({length:Math.max(cur,1)},(_,i)=>`<div style="width:18px;height:8px;border-radius:2px;background:${i<cur?'var(--amber)':'var(--s3)'};opacity:${i===0&&!isNad?'1':'0.7'}"></div>`).join('')}
+        ${cur===0?`<span style="font-size:.7rem;color:var(--dim)">${t('hist.empty_boxes')}</span>`:''}
+      </div>`;
+      return`<div style="background:var(--s2);border-radius:8px;padding:8px 12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:.8rem">
+          <span>${arrow} ${isNad?t('hist.move_add',{n}):t('hist.move_remove',{n})}</span>
+          <span style="color:var(--dim);font-size:.72rem">${fmtDate(r.date)}</span>
+        </div>
+        <div style="font-size:.7rem;color:var(--dim);margin-top:2px">${prev} → ${t('hist.boxes_count',{n:cur})} ${r.notes?'· '+r.notes:''}</div>
+        ${bar}
+      </div>`;
+    }).join('');
+  }
+
+  // ── Klíčové události (rojení, matka, krmení, otočení, polštář)
+  const KEY_TYPES=['prevzeti','rojeni','matka','krmeni','otoceni','polstar'];
+  const cesnoAlert=recs.filter(r=>r.type==='cesno'&&(r.data?.vousy==='ano'||r.data?.pyl==='ne'));
+  const keyRecs=[
+    ...recs.filter(r=>KEY_TYPES.includes(r.type)),
+    ...cesnoAlert,
+  ].sort((a,b)=>a.date.localeCompare(b.date));
+  const ev=document.getElementById('histEvents');
+  if(!keyRecs.length){
+    ev.innerHTML=`<div style="font-size:.8rem;color:var(--dim);padding:4px 0">${t('hist.no_events')}</div>`;
+  } else {
+    ev.innerHTML=keyRecs.map(r=>{
+      const{icon,label,color}=recMeta(r);
+      let detail=recSummary(r);
+      if(r.type==='cesno'){
+        const flags=[r.data?.vousy==='ano'&&t('hist.cesno_flag_beard'),r.data?.pyl==='ne'&&t('hist.cesno_flag_nopollen')].filter(Boolean).join(', ');
+        detail=flags;
+      }
+      return`<div style="background:var(--s2);border-radius:8px;padding:8px 12px;border-left:3px solid ${color}">
+        <div style="display:flex;justify-content:space-between;font-size:.8rem">
+          <span style="color:${color};font-weight:700">${icon} ${label}</span>
+          <span style="color:var(--dim);font-size:.72rem">${fmtDate(r.date)}</span>
+        </div>
+        ${detail?`<div style="font-size:.78rem;margin-top:3px">${esc(detail)}</div>`:''}
+        ${r.notes?`<div style="font-size:.74rem;color:var(--dim);margin-top:2px">📝 ${esc(r.notes)}</div>`:''}
+      </div>`;
+    }).join('');
+  }
+
+  openModal('historyModal');
+}
+
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+
+function fillSelect(id,selectedId,skipEmpty=false,withEmpty=false){
+  const sel=document.getElementById(id);
+  sel.innerHTML=withEmpty?`<option value="">${t('select.no_stan')}</option>`:'';
+  if(id==='hiveStanId'||id==='taskHive'){
+    if(id==='taskHive') sel.innerHTML=`<option value="">${t('select.all_hives')}</option>`;
+    data.hives.forEach(h=>{const o=document.createElement('option');o.value=h.id;o.textContent=h.name;if(h.id===selectedId)o.selected=true;sel.appendChild(o);});
+    if(id==='hiveStanId'){
+      sel.innerHTML=`<option value="">${t('select.no_stan')}</option>`;
+      data.stanoviste.forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent=`${s.number}: ${s.name}`;if(s.id===selectedId)o.selected=true;sel.appendChild(o);});
+    }
+  } else {
+    data.hives.forEach(h=>{const o=document.createElement('option');o.value=h.id;o.textContent=h.name;if(h.id===selectedId)o.selected=true;sel.appendChild(o);});
+  }
+}
+
+// ════════════════════════════
+//  INIT
+// ════════════════════════════
+applyTranslations();
+// Unregister old service workers and reload so they no longer control the page
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.getRegistrations().then(regs=>{
+    if(regs.length>0){
+      Promise.all(regs.map(r=>r.unregister())).then(()=>{
+        window.location.reload();
+      });
+    }
+  });
+}
+
+// Handle email confirmation redirect (token in URL hash)
+const _hashParams = new URLSearchParams(window.location.hash.substring(1));
+if(_hashParams.get('access_token')){
+  // Supabase will handle this automatically via onAuthStateChange
+  window.history.replaceState({}, document.title, window.location.pathname);
+}
+
+async function migrateLocalStorage(){
+  const raw=localStorage.getItem('vcelnik');
+  if(!raw) return;
+  let old; try{ old=JSON.parse(raw); }catch{ return; }
+  if(!old||(!old.hives?.length&&!old.records?.length&&!old.tasks?.length&&!old.stanoviste?.length)) return;
+  const total=(old.hives?.length||0)+(old.records?.length||0)+(old.tasks?.length||0)+(old.stanoviste?.length||0);
+  if(!confirm(`Nalezena lokální data (${old.hives?.length||0} úlů, ${old.records?.length||0} záznamů, ${old.tasks?.length||0} úkolů, ${old.stanoviste?.length||0} stanovišť).\n\nPřenést do cloudu?`)) return;
+  try{
+    if(old.stanoviste?.length) await supa.from('stanoviste').upsert(old.stanoviste.map(s=>({...s,user_id:currentUser.id})),{onConflict:'id',ignoreDuplicates:true});
+    if(old.hives?.length) await supa.from('hives').upsert(old.hives.map(h=>({...h,user_id:currentUser.id,stan_id:h.stanId||null,stanId:undefined})),{onConflict:'id',ignoreDuplicates:true});
+    if(old.records?.length) await supa.from('records').upsert(old.records.map(r=>({...r,user_id:currentUser.id,hive_id:r.hiveId||r.hive_id,hiveId:undefined})),{onConflict:'id',ignoreDuplicates:true});
+    if(old.tasks?.length) await supa.from('tasks').upsert(old.tasks.map(tk=>({...tk,user_id:currentUser.id,title:tk.text||tk.title,due_date:tk.due||tk.due_date||null,text:undefined,due:undefined,hive_id:tk.hiveId||null,hiveId:undefined})),{onConflict:'id',ignoreDuplicates:true});
+    localStorage.removeItem('vcelnik');
+    alert(`✅ Migrace hotova! Přeneseno ${total} položek.`);
+  }catch(e){ alert('❌ Chyba při migraci: '+e.message); }
+}
+
+supa.auth.onAuthStateChange(async (_event, session) => {
+  if(session?.user){
+    showApp(session.user);
+    await loadAllData();
+    await migrateLocalStorage();
+    updateProfileBtn();
+    applyTranslations();
+    renderDash();
+  } else {
+    showLogin();
+  }
+});
+</script>
+</body>
+</html>
