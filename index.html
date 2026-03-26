@@ -765,14 +765,12 @@
     <details style="margin:6px 0">
       <summary style="cursor:pointer;font-size:.85rem;color:var(--gold);user-select:none">📋 LPIS údaje (pro hlášení)</summary>
       <div style="margin-top:8px;display:flex;flex-direction:column;gap:8px">
+        <p style="font-size:.8rem;color:#aaa;margin:0">Reg. číslo stanoviště se přebírá z pole „Číslo stanoviště" výše.</p>
         <div class="row2">
-          <div class="fg"><label>Reg. číslo stanoviště</label><input id="stanRegCislo" type="text" placeholder="CZ 90871836" maxlength="20"/></div>
           <div class="fg"><label>Číselný kód k.ú.</label><input id="stanKuKod" type="text" placeholder="602426" maxlength="15"/></div>
-        </div>
-        <div class="row2">
           <div class="fg"><label>Parcela číslo</label><input id="stanParcelaCislo" type="text" placeholder="981/11" maxlength="20"/></div>
-          <div class="fg"><label>Typ/kontrola parcely</label><input id="stanParcelaTyp" type="text" placeholder="P/OK" maxlength="10"/></div>
         </div>
+        <div class="fg"><label>Typ/kontrola parcely</label><input id="stanParcelaTyp" type="text" placeholder="P/OK" maxlength="10"/></div>
       </div>
     </details>
     <div class="fg"><label data-i18n="stan_modal.note_label">Poznámka</label><textarea id="stanNote" placeholder="…"></textarea></div>
@@ -3155,7 +3153,6 @@ function openStanModal(id=null){
   document.getElementById('stanAddr').value=s?.address||'';
   document.getElementById('stanGps').value=s?.gps||'';
   document.getElementById('stanNote').value=s?.note||'';
-  document.getElementById('stanRegCislo').value=s?.reg_cislo||'';
   document.getElementById('stanKuKod').value=s?.ku_kod||'';
   document.getElementById('stanParcelaCislo').value=s?.parcela_cislo||'';
   document.getElementById('stanParcelaTyp').value=s?.parcela_typ||'';
@@ -3167,7 +3164,6 @@ async function saveStan(){
   if(!num&&!name){alert(t('alert.stan_required'));return;}
   const obj={number:num,name:name||`${t('stan_modal.default_name')}${num}`,address:document.getElementById('stanAddr').value.trim(),
     gps:document.getElementById('stanGps').value.trim(),note:document.getElementById('stanNote').value.trim(),
-    reg_cislo:document.getElementById('stanRegCislo').value.trim(),
     ku_kod:document.getElementById('stanKuKod').value.trim(),
     parcela_cislo:document.getElementById('stanParcelaCislo').value.trim(),
     parcela_typ:document.getElementById('stanParcelaTyp').value.trim()};
@@ -3382,7 +3378,7 @@ ${iF?`<tr><td>${t('report.company_name')}</td><td><strong>${esc(p.firma)||'–'}
 ${data.stanoviste.length?`<h2 style="font-size:12pt;margin:0 0 6px">Přehled stanovišť – LPIS</h2>
 <table><thead><tr><th>Reg.číslo stanoviště</th><th>Číselný kód k.ú.</th><th>Parcela číslo</th><th>Parc. typ</th><th>Název stanoviště</th><th>Počet včelstev</th></tr></thead>
 <tbody>${data.stanoviste.map(s=>{const cnt=data.hives.filter(h=>h.stanId===s.id).length;
-return`<tr><td>${esc(s.reg_cislo||'–')}</td><td>${esc(s.ku_kod||'–')}</td><td>${esc(s.parcela_cislo||'–')}</td><td>${esc(s.parcela_typ||'–')}</td><td>${esc(s.name)}</td><td>${cnt}</td></tr>`;}).join('')}
+return`<tr><td>${esc(s.number||'–')}</td><td>${esc(s.ku_kod||'–')}</td><td>${esc(s.parcela_cislo||'–')}</td><td>${esc(s.parcela_typ||'–')}</td><td>${esc(s.name)}</td><td>${cnt}</td></tr>`;}).join('')}
 </tbody></table>
 <p style="font-size:8.5pt;color:#666;margin-bottom:16px">*Typ parcely/kontrola parcely – Typ parcely: P = Pozemková, S = Stavební / Kontrola: OK – evidována, ! – nenalezena, ? – není vyplněna</p>`:''}
 <table><thead><tr><th>${t('report.col_num')}</th><th>${t('report.col_name')}</th><th>${t('report.col_type')}</th><th>${t('report.col_status')}</th><th>${t('report.col_origin')}</th><th>${t('report.col_last')}</th></tr></thead>
