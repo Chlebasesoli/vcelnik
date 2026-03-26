@@ -732,7 +732,7 @@
       <div class="fg"><label data-i18n="rec_modal.nadir_frame">Typ rámků v nástavku</label>
         <div class="tog-row" style="flex-wrap:wrap;gap:6px">
           <button class="tog-btn active" data-f="nadirFrame" data-v="horní loučky" onclick="togField(this,'nadirFrame')" data-i18n="frame.loucky">🪵 Horní loučky</button>
-          <button class="tog-btn" data-f="nadirFrame" data-v="Dělenův rámek" onclick="togField(this,'nadirFrame')" data-i18n="frame.delen">🔩 Dělenův rámek</button>
+          <button class="tog-btn" data-f="nadirFrame" data-v="Delonův rámek" onclick="togField(this,'nadirFrame')" data-i18n="frame.delen">🔩 Delonův rámek</button>
           <button class="tog-btn" data-f="nadirFrame" data-v="Hoffmannův rámek" onclick="togField(this,'nadirFrame')" data-i18n="frame.hoffman">🪟 Hoffmannův rámek</button>
         </div>
       </div>
@@ -1332,7 +1332,7 @@ const TRANSLATIONS={
     'rec.default':'Záznam',
     // Frame types
     'frame.loucky':'🪵 Horní loučky',
-    'frame.delen':'🔩 Dělenův rámek',
+    'frame.delen':'🔩 Delonův rámek',
     'frame.hoffman':'🪟 Hoffmannův rámek',
     // Varroa bottom
     'varroa.spad':'📋 Přirozený spad',
@@ -1819,7 +1819,7 @@ const TRANSLATIONS={
     'rec.varroaDno':'Varroa – bottom board',
     'rec.plasty':'Comb straightness',
     'frame.loucky':'🪵 Top bars only',
-    'frame.delen':'🔩 Delene frame (wire)',
+    'frame.delen':'🔩 Delon frame (wire)',
     'frame.hoffman':'🪟 Hoffmann frame (wood)',
     'varroa.spad':'📋 Natural drop','varroa.alkohol':'🧪 Alcohol wash','varroa.cukr':'🍬 Sugar roll',
     'varroa.ok':'✅ OK','varroa.pozor':'⚠️ Watch','varroa.kriticke':'🚨 Critical',
@@ -2295,7 +2295,7 @@ const TRANSLATIONS={
     'rec.poznamka':'Notiz',
     'rec.varroaDno':'Varroa – Windel',
     'rec.plasty':'Wabengradheit',
-    'frame.loucky':'🪵 Oberleisten','frame.delen':'🔩 Delene-Rahmen (Draht)','frame.hoffman':'🪟 Hoffmann-Rahmen (Holz)',
+    'frame.loucky':'🪵 Oberleisten','frame.delen':'🔩 Delon-Rahmen (Draht)','frame.hoffman':'🪟 Hoffmann-Rahmen (Holz)',
     'varroa.spad':'📋 Natürlicher Abfall','varroa.alkohol':'🧪 Alkoholtest','varroa.cukr':'🍬 Puderzuckertest',
     'varroa.ok':'✅ OK','varroa.pozor':'⚠️ Achtung','varroa.kriticke':'🚨 Kritisch',
     'plasty.rovne':'✅ Gerade','plasty.mirne':'↗️ Leicht schief','plasty.sikme':'⚠️ Schief','plasty.krizove':'🚨 Überkreuzt',
@@ -3472,8 +3472,8 @@ function renderTower(h){
     viz.innerHTML=`<div class="tower-empty">${t('tower.empty')}</div>`;
     return;
   }
-  const FRAME_ICONS={'horní loučky':'🪵','Dělenův rámek':'🔩','Hoffmannův rámek':'🪟','nezadán':'❓'};
-  const FRAMES=['horní loučky','Dělenův rámek','Hoffmannův rámek'];
+  const FRAME_ICONS={'horní loučky':'🪵','Delonův rámek':'🔩','Hoffmannův rámek':'🪟','nezadán':'❓'};
+  const FRAMES=['horní loučky','Delonův rámek','Hoffmannův rámek'];
   viz.innerHTML=ns.map((b,i)=>{
     const isTop=i===0, isBot=i===ns.length-1;
     const pos=isTop?t('tower.top'):isBot&&ns.length>1?t('tower.bottom'):t('tower.middle')+` ${i+1}`;
