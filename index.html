@@ -2307,10 +2307,10 @@ Object.defineProperty(window,'data',{get:()=>_state});
 // Direct REST helpers – bypass supabase-js to avoid Prefer/Accept headers that
 // trigger extra CORS preflights. Includes retry with AbortController so that
 // if a CORS preflight hangs (known issue on some networks), we abort + retry.
-async function _doFetch(url, opts, retries=2){
+async function _doFetch(url, opts, retries=3){
   for(let i=0; i<=retries; i++){
     const ctrl = new AbortController();
-    const tid = setTimeout(()=>ctrl.abort(), 8000);
+    const tid = setTimeout(()=>ctrl.abort(), 5000);
     try{
       const r = await fetch(url, {...opts, signal:ctrl.signal});
       clearTimeout(tid);
@@ -2318,7 +2318,8 @@ async function _doFetch(url, opts, retries=2){
     }catch(e){
       clearTimeout(tid);
       if(i===retries) throw new Error('Připojení selhalo – zkontroluj internet ('+(e.message||e)+')');
-      await new Promise(r=>setTimeout(r, 300));
+      console.log('[fetch] attempt '+(i+1)+' failed ('+( e.name==='AbortError'?'timeout':e.message)+'), retrying…');
+      await new Promise(r=>setTimeout(r, 500));
     }
   }
 }
@@ -3529,6 +3530,39 @@ async function migrateLocalStorage(){
   }catch(e){ alert('❌ Chyba při migraci: '+e.message); }
 }
 
+// Background warmup: fire POST preflights early so browser caches OPTIONS response
+// This prevents the first real save from hanging while waiting for OPTIONS.
+let _postPreflightWarmed = false;
+async function _warmupPostPreflight(){
+  if(_postPreflightWarmed) return;
+  const token = await _getToken().catch(()=>null);
+  if(!token) return;
+  const headers = {'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+token};
+  // Try up to 15 times with 3 s timeout – keep retrying until OPTIONS gets cached
+  for(let i=0; i<15 && !_postPreflightWarmed; i++){
+    const ctrl = new AbortController();
+    const tid = setTimeout(()=>ctrl.abort(), 3000);
+    try{
+      // POST to hives – response code doesn't matter, we just need OPTIONS to succeed
+      await fetch(`${SUPA_URL}/rest/v1/hives`, {method:'POST', headers, body:'{}', signal:ctrl.signal});
+      clearTimeout(tid);
+      _postPreflightWarmed = true;
+      console.log('[warmup] POST preflight cached (attempt '+(i+1)+')');
+      return;
+    }catch(e){
+      clearTimeout(tid);
+      if(e.name==='AbortError'){
+        console.log('[warmup] attempt '+(i+1)+' timed out, retrying in 1 s…');
+        await new Promise(r=>setTimeout(r,1000));
+      } else {
+        // Network error – back off and retry
+        await new Promise(r=>setTimeout(r,2000));
+      }
+    }
+  }
+  console.warn('[warmup] POST preflight warmup gave up after 15 attempts');
+}
+
 let _lastLoadedUserId = null;
 supa.auth.onAuthStateChange(async (_event, session) => {
   if(session?.user){
@@ -3540,12 +3574,15 @@ supa.auth.onAuthStateChange(async (_event, session) => {
       _lastLoadedUserId = uid;
       await loadAllData().catch(e => console.error('loadAllData error:', e));
       await migrateLocalStorage();
+      // Kick off background warmup so POST CORS preflight is cached before first save
+      _warmupPostPreflight();
     }
     updateProfileBtn();
     applyTranslations();
     renderDash();
   } else {
     _lastLoadedUserId = null;
+    _postPreflightWarmed = false; // reset on logout so next login re-warms
     showLogin();
   }
 });
