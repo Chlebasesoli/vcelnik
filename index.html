@@ -538,7 +538,7 @@
     <div class="fg"><label data-i18n="hive_modal.note_label">Poznámka</label><textarea id="hiveNote" placeholder="…"></textarea></div>
     <div class="form-actions">
       <button class="btn btn-ghost" onclick="closeModal('hiveModal')" data-i18n="hive_modal.cancel">Zrušit</button>
-      <button class="btn btn-primary" onclick="saveHive()" data-i18n="hive_modal.save">Uložit</button>
+      <button class="btn btn-primary" id="saveHiveBtn" onclick="saveHive()">Uložit</button>
     </div>
   </div>
 </div>
@@ -2662,10 +2662,19 @@ function openHiveModal(id=null){
   openModal('hiveModal');
 }
 
+function _supaTimeout(promise, ms=10000){
+  return Promise.race([promise, new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timeout – zkontroluj připojení')),ms))]);
+}
 async function saveHive(){
   const name=document.getElementById('hiveName').value.trim();
   if(!name){alert('Zadej název úlu');return;}
+  const btn=document.getElementById('saveHiveBtn');
+  if(btn){btn.disabled=true;btn.textContent='Ukládám…';}
+  // clear previous error
+  const prev=document.getElementById('hiveModalError');
+  if(prev) prev.remove();
   try{
+  if(!currentUser) throw new Error('Nejsi přihlášen/a – obnov stránku a přihlas se znovu.');
   const origin=readOriginData();
   const queen=editHiveId?{
     rok:parseInt(document.getElementById('hiveQueenYearEdit').value)||null,
@@ -2681,27 +2690,27 @@ async function saveHive(){
   };
   if(editHiveId){
     const stanId=document.getElementById('hiveStanId').value||null;
-    sb(await supa.from('hives').update({
+    sb(await _supaTimeout(supa.from('hives').update({
       name, type:document.getElementById('hiveType').value,
       status:document.getElementById('hiveStatus').value,
       stan_id:stanId,
       note:document.getElementById('hiveNote').value.trim(),
       origin, queen,
       updated_at:new Date().toISOString(),
-    }).eq('id',editHiveId));
+    }).eq('id',editHiveId)));
   } else {
     const n=parseInt(document.getElementById('hiveInitBoxes').value)||0;
     const nastavky=Array.from({length:n},()=>({id:uid(),dateAdded:today()}));
     const newHiveId=uid();
     const stanId=document.getElementById('hiveStanId').value||null;
-    const insRes = await supa.from('hives').insert({
+    const insRes = await _supaTimeout(supa.from('hives').insert({
       id:newHiveId, user_id:currentUser.id,
       name, type:document.getElementById('hiveType').value,
       status:document.getElementById('hiveStatus').value,
       stan_id:stanId,
       note:document.getElementById('hiveNote').value.trim(),
       nastavky, origin, queen,
-    });
+    }));
     sb(insRes);
 
     // ── Automatický první záznam „Převzetí" pro od chovatele / koupeno
@@ -2733,9 +2742,12 @@ async function saveHive(){
   if(currentView==='detail') renderDetail(); else renderHives();
   }catch(e){
     console.error('saveHive error:', e);
-    const errDiv=document.getElementById('hiveModalError')||Object.assign(document.createElement('div'),{id:'hiveModalError',style:'color:red;padding:8px;font-size:.85rem;'});
+    const errDiv=Object.assign(document.createElement('div'),{id:'hiveModalError',style:'color:var(--danger);padding:8px;font-size:.85rem;margin-top:8px;border-radius:8px;background:#3a1808'});
     errDiv.textContent='❌ '+e.message;
-    if(!document.getElementById('hiveModalError')) document.querySelector('#hiveModal .form-actions').before(errDiv);
+    const fa=document.querySelector('#hiveModal .form-actions');
+    if(fa) fa.after(errDiv); else document.querySelector('#hiveModal .modal').append(errDiv);
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='Uložit';}
   }
 }
 function editCurrentHive(){ openHiveModal(currentHiveId); }
