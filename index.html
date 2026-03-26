@@ -233,28 +233,28 @@
   </div>
   <div class="login-logo">🐝</div>
   <div class="login-title">Včelník</div>
-  <div class="login-sub">Správa včelstev Warré</div>
+  <div class="login-sub" data-i18n="login.subtitle">Správa včelstev Warré</div>
   <div class="login-card">
     <div class="login-tabs">
-      <button class="login-tab active" id="tabLogin" onclick="switchAuthTab('login')">Přihlásit se</button>
-      <button class="login-tab" id="tabRegister" onclick="switchAuthTab('register')">Registrovat</button>
+      <button class="login-tab active" id="tabLogin" onclick="switchAuthTab('login')" data-i18n="login.tab_login">Přihlásit se</button>
+      <button class="login-tab" id="tabRegister" onclick="switchAuthTab('register')" data-i18n="login.tab_register">Registrovat</button>
     </div>
     <div id="authFormLogin">
       <div style="display:flex;flex-direction:column;gap:10px">
-        <input class="login-input" id="loginEmail" type="email" placeholder="E-mail" autocomplete="email"/>
-        <input class="login-input" id="loginPassword" type="password" placeholder="Heslo" autocomplete="current-password"/>
+        <input class="login-input" id="loginEmail" type="email" placeholder="E-mail" autocomplete="email" data-i18n="login.email" data-i18n-attr="placeholder"/>
+        <input class="login-input" id="loginPassword" type="password" placeholder="Heslo" autocomplete="current-password" data-i18n="login.password" data-i18n-attr="placeholder"/>
         <div class="login-err" id="loginErr"></div>
-        <button class="login-btn" id="loginBtn" onclick="doLogin()">Přihlásit se</button>
+        <button class="login-btn" id="loginBtn" onclick="doLogin()" data-i18n="login.tab_login">Přihlásit se</button>
       </div>
     </div>
     <div id="authFormRegister" style="display:none">
       <div style="display:flex;flex-direction:column;gap:10px">
-        <input class="login-input" id="regEmail" type="email" placeholder="E-mail" autocomplete="email"/>
-        <input class="login-input" id="regPassword" type="password" placeholder="Heslo (min. 6 znaků)" autocomplete="new-password"/>
-        <input class="login-input" id="regPassword2" type="password" placeholder="Heslo znovu" autocomplete="new-password"/>
+        <input class="login-input" id="regEmail" type="email" placeholder="E-mail" autocomplete="email" data-i18n="login.email" data-i18n-attr="placeholder"/>
+        <input class="login-input" id="regPassword" type="password" placeholder="Heslo (min. 6 znaků)" autocomplete="new-password" data-i18n="login.password_new" data-i18n-attr="placeholder"/>
+        <input class="login-input" id="regPassword2" type="password" placeholder="Heslo znovu" autocomplete="new-password" data-i18n="login.password_confirm" data-i18n-attr="placeholder"/>
         <div class="login-err" id="regErr"></div>
         <div class="login-ok" id="regOk"></div>
-        <button class="login-btn" id="regBtn" onclick="doRegister()">Vytvořit účet</button>
+        <button class="login-btn" id="regBtn" onclick="doRegister()" data-i18n="login.btn_register">Vytvořit účet</button>
       </div>
     </div>
   </div>
@@ -940,6 +940,14 @@ const TRANSLATIONS={
   cs:{
     // App
     'app.subtitle':'Správa včelstev',
+    'login.subtitle':'Správa včelstev Warré',
+    'login.tab_login':'Přihlásit se',
+    'login.tab_register':'Registrovat',
+    'login.email':'E-mail',
+    'login.password':'Heslo',
+    'login.password_new':'Heslo (min. 6 znaků)',
+    'login.password_confirm':'Heslo znovu',
+    'login.btn_register':'Vytvořit účet',
     // Nav
     'nav.dash':'Přehled',
     'nav.hives':'Úly',
@@ -1384,6 +1392,14 @@ const TRANSLATIONS={
   en:{
     // App
     'app.subtitle':'Colony management',
+    'login.subtitle':'Warré hive management',
+    'login.tab_login':'Sign in',
+    'login.tab_register':'Register',
+    'login.email':'E-mail',
+    'login.password':'Password',
+    'login.password_new':'Password (min. 6 chars)',
+    'login.password_confirm':'Repeat password',
+    'login.btn_register':'Create account',
     // Nav
     'nav.dash':'Dashboard',
     'nav.hives':'Hives',
@@ -1828,6 +1844,14 @@ const TRANSLATIONS={
   de:{
     // App
     'app.subtitle':'Völkerverwaltung',
+    'login.subtitle':'Warré-Bienenstockverwaltung',
+    'login.tab_login':'Anmelden',
+    'login.tab_register':'Registrieren',
+    'login.email':'E-Mail',
+    'login.password':'Passwort',
+    'login.password_new':'Passwort (min. 6 Zeichen)',
+    'login.password_confirm':'Passwort wiederholen',
+    'login.btn_register':'Konto erstellen',
     // Nav
     'nav.dash':'Übersicht',
     'nav.hives':'Beuten',
