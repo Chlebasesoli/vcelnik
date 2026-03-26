@@ -903,9 +903,9 @@ async function doRegister(){
 }
 
 async function doLogout(){
-  await supa.auth.signOut();
-  currentUser = null;
   closeModal('profileModal');
+  showLogin();
+  try{ await supa.auth.signOut(); }catch(e){ /* ignore – local session already cleared */ }
 }
 
 function _authErrMsg(err){
