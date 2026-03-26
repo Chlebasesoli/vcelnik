@@ -3498,7 +3498,18 @@ async function migrateLocalStorage(){
 supa.auth.onAuthStateChange(async (_event, session) => {
   if(session?.user){
     showApp(session.user);
-    await loadAllData();
+    try{
+      await Promise.race([
+        loadAllData(),
+        new Promise((_,rej)=>setTimeout(()=>rej(new Error('REST API nedostupné – zkus incognito nebo jiný prohlížeč')),12000))
+      ]);
+    }catch(e){
+      console.error('loadAllData failed:', e);
+      const b=document.createElement('div');
+      b.style='position:fixed;top:0;left:0;right:0;background:#c0392b;color:#fff;padding:10px 16px;z-index:9999;font-size:.9rem;text-align:center';
+      b.textContent='⚠️ '+e.message;
+      document.body.appendChild(b);
+    }
     await migrateLocalStorage();
     updateProfileBtn();
     applyTranslations();
