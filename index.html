@@ -12,6 +12,7 @@
   <title>Včelník</title>
   <link rel="manifest" href="manifest.json"/>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <style>
     :root{
       --bg:#4a2e0e;--surface:#2a1a07;--s2:#341f0a;--s3:#3e260d;
@@ -1044,10 +1045,10 @@
     <div style="border-top:1px solid var(--s3);margin-top:14px;padding-top:14px">
       <p style="font-size:.72rem;color:var(--dim);margin-bottom:10px" data-i18n="profile.backup_info">📦 Záloha dat — ulož si kopii nebo přenes na jiné zařízení</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn" style="flex:1;background:var(--s2);color:var(--text)" onclick="exportData()" data-i18n="profile.export">📤 Exportovat data</button>
+        <button class="btn" style="flex:1;background:var(--s2);color:var(--text)" onclick="exportData(this)" data-i18n="profile.export">📤 Exportovat ZIP</button>
         <button class="btn" style="flex:1;background:var(--s2);color:var(--text)" onclick="document.getElementById('importFileInput').click()" data-i18n="profile.import">📥 Importovat data</button>
       </div>
-      <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importData(this)"/>
+      <input type="file" id="importFileInput" accept=".json,.zip" style="display:none" onchange="importData(this)"/>
     </div>
     <div style="border-top:1px solid var(--s3);margin-top:14px;padding-top:14px">
       <p style="font-size:.72rem;color:var(--dim);margin-bottom:8px" id="authEmailDisplay"></p>
@@ -1560,8 +1561,8 @@ const TRANSLATIONS={
     'profile.close':'Zavřít',
     'profile.save':'Uložit',
     'profile.report':'📄 Report',
-    'profile.backup_info':'📦 Záloha dat — ulož si kopii nebo přenes na jiné zařízení',
-    'profile.export':'📤 Exportovat data',
+    'profile.backup_info':'📦 Záloha dat — ulož si kopii (ZIP s fotkami) nebo přenes na jiné zařízení',
+    'profile.export':'📤 Exportovat ZIP',
     'profile.import':'📥 Importovat data',
     'profile.lang_label':'Jazyk aplikace',
     // History modal
@@ -2038,8 +2039,8 @@ const TRANSLATIONS={
     'profile.close':'Close',
     'profile.save':'Save',
     'profile.report':'📄 Report',
-    'profile.backup_info':'📦 Data backup — save a copy or transfer to another device',
-    'profile.export':'📤 Export data',
+    'profile.backup_info':'📦 Data backup — save a ZIP with photos or transfer to another device',
+    'profile.export':'📤 Export ZIP',
     'profile.import':'📥 Import data',
     'profile.lang_label':'App language',
     // History modal
@@ -2514,8 +2515,8 @@ const TRANSLATIONS={
     'profile.close':'Schließen',
     'profile.save':'Speichern',
     'profile.report':'📄 Bericht',
-    'profile.backup_info':'📦 Datensicherung — speichere eine Kopie oder übertrage auf ein anderes Gerät',
-    'profile.export':'📤 Daten exportieren',
+    'profile.backup_info':'📦 Datensicherung — speichere ein ZIP mit Fotos oder übertrage auf ein anderes Gerät',
+    'profile.export':'📤 ZIP exportieren',
     'profile.import':'📥 Daten importieren',
     'profile.lang_label':'App-Sprache',
     // History modal
@@ -2825,22 +2826,60 @@ async function loadAllData(){
 // Kept so any stray call doesn't crash.
 function save(){}
 
-function exportData(){
-  const payload={
-    _verze:2,
-    exportováno:new Date().toISOString(),
-    hives: _state.hives,
-    records: _state.records,
-    tasks: _state.tasks,
-    stanoviste: _state.stanoviste,
-    profil:profile,
-  };
-  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  const datum=new Date().toISOString().slice(0,10);
-  a.href=url; a.download=`vcelnik-zaloha-${datum}.json`;
-  a.click(); URL.revokeObjectURL(url);
+async function exportData(btn){
+  if(btn){btn.disabled=true;btn.textContent='⏳ Připravuji...';}
+  try{
+    const datum=new Date().toISOString().slice(0,10);
+    const zip=new JSZip();
+    const photosFolder=zip.folder('photos');
+
+    // Deep clone to avoid mutating live state
+    const hivesClean=JSON.parse(JSON.stringify(_state.hives));
+    const stanClean=JSON.parse(JSON.stringify(_state.stanoviste));
+
+    // Extract hive photos
+    for(const h of hivesClean){
+      if(h.photo && h.photo.startsWith('data:')){
+        const comma=h.photo.indexOf(',');
+        const meta=h.photo.slice(0,comma);
+        const b64=h.photo.slice(comma+1);
+        const ext=meta.includes('png')?'png':'jpg';
+        photosFolder.file(`hive_${h.id}.${ext}`,b64,{base64:true});
+        h.photo=`photos/hive_${h.id}.${ext}`;
+      }
+    }
+
+    // Extract stanoviště photos
+    for(const s of stanClean){
+      if(s.photo && s.photo.startsWith('data:')){
+        const comma=s.photo.indexOf(',');
+        const meta=s.photo.slice(0,comma);
+        const b64=s.photo.slice(comma+1);
+        const ext=meta.includes('png')?'png':'jpg';
+        photosFolder.file(`stan_${s.id}.${ext}`,b64,{base64:true});
+        s.photo=`photos/stan_${s.id}.${ext}`;
+      }
+    }
+
+    const payload={
+      _verze:3,
+      exportováno:new Date().toISOString(),
+      hives:hivesClean,
+      records:_state.records,
+      tasks:_state.tasks,
+      stanoviste:stanClean,
+      profil:profile,
+    };
+    zip.file(`vcelnik-zaloha-${datum}.json`,JSON.stringify(payload,null,2));
+
+    const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=`vcelnik-zaloha-${datum}.zip`;
+    a.click(); URL.revokeObjectURL(url);
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='📤 Exportovat ZIP';}
+  }
 }
 
 function importData(input){
