@@ -399,13 +399,19 @@
 <div class="view active" id="viewDash">
   <div class="dash-grid" id="dashGrid"></div>
   <div id="tipMesiceCard"></div>
-  <div class="sec"><h2 data-i18n="dash.recent">Poslední záznamy</h2></div>
+  <div class="sec">
+    <h2 data-i18n="dash.recent">Poslední záznamy</h2>
+    <button class="btn-icon" onclick="openRecordModal()" title="Nový záznam">+</button>
+  </div>
   <div class="activity-list" id="recentList"></div>
 </div>
 
 <!-- ── ÚLY ── -->
 <div class="view" id="viewUly">
-  <div class="sec"><h2 data-i18n="hives.title">Moje úly</h2></div>
+  <div class="sec">
+    <h2 data-i18n="hives.title">Moje úly</h2>
+    <button class="btn-icon" onclick="openRecordModal()" title="Nový záznam">+</button>
+  </div>
   <div class="hive-grid" id="hiveGrid"></div>
 </div>
 
