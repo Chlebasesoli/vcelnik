@@ -183,6 +183,16 @@
     .lightbox img{max-width:95vw;max-height:90vh;object-fit:contain;border-radius:8px}
     .lightbox-close{position:absolute;top:16px;right:20px;background:none;border:none;color:#fff;font-size:2rem;cursor:pointer;line-height:1}
 
+    /* Multi-hive mode toggle */
+    .hive-mode-row{display:flex;gap:6px;margin-bottom:10px}
+    .hive-mode-btn{flex:1;padding:7px 10px;border-radius:8px;border:1px solid var(--s3);background:var(--s2);color:var(--dim);font-size:.8rem;font-weight:600;cursor:pointer;transition:all .15s}
+    .hive-mode-btn.active{background:var(--amber);color:#1a1008;border-color:var(--amber)}
+    .hive-checkbox-list{display:flex;flex-direction:column;gap:3px;max-height:150px;overflow-y:auto;background:var(--s2);border-radius:8px;padding:8px 10px;border:1px solid var(--s3)}
+    .hive-cb-row{display:flex;align-items:center;gap:8px;padding:3px 0;cursor:pointer}
+    .hive-cb-row input[type=checkbox]{width:16px;height:16px;accent-color:var(--amber);cursor:pointer;flex-shrink:0}
+    .hive-cb-row label{cursor:pointer;font-size:.82rem;color:var(--text);flex:1}
+    .type-btn.disabled-multi{opacity:.3;pointer-events:none;filter:grayscale(1)}
+
     /* Record type picker */
     .type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
     .type-btn{background:var(--bg);border:2px solid var(--s3);border-radius:10px;padding:10px 6px;
@@ -694,8 +704,28 @@
 <div class="overlay" id="recordModal">
   <div class="modal">
     <h3 data-i18n="rec_modal.title">Nový záznam</h3>
-    <div class="fg" id="recHiveGroup">
-      <label data-i18n="rec_modal.hive_label">Úl</label><select id="recHiveSelect"></select>
+    <div id="recHiveGroup">
+      <!-- Mode toggle (hidden in detail view) -->
+      <div class="hive-mode-row" id="recHiveModeRow">
+        <button class="hive-mode-btn active" id="hiveModeBtn1" onclick="setHiveMode('single')">🐝 Jeden úl</button>
+        <button class="hive-mode-btn" id="hiveModeBtn2" onclick="setHiveMode('multi')">🐝🐝 Více úlů</button>
+      </div>
+      <!-- Single-hive select -->
+      <div class="fg" id="recHiveSingleWrap">
+        <label data-i18n="rec_modal.hive_label">Úl</label>
+        <select id="recHiveSelect"></select>
+      </div>
+      <!-- Multi-hive checkboxes -->
+      <div id="recHiveMultiWrap" style="display:none;margin-bottom:10px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <label style="font-size:.8rem;font-weight:600;color:var(--text)">Vybrat úly</label>
+          <div style="display:flex;gap:5px">
+            <button class="btn btn-sm" style="font-size:.72rem;padding:3px 8px" onclick="selectAllHives(true)">Vybrat vše</button>
+            <button class="btn btn-sm" style="font-size:.72rem;padding:3px 8px;background:var(--s3);color:var(--text)" onclick="selectAllHives(false)">Zrušit</button>
+          </div>
+        </div>
+        <div class="hive-checkbox-list" id="recHiveCheckboxList"></div>
+      </div>
     </div>
     <div class="fg"><label data-i18n="rec_modal.date_label">Datum</label><input id="recDate" type="date"/></div>
     <div class="fg"><label data-i18n="rec_modal.type_label">Typ záznamu</label></div>
@@ -3756,11 +3786,65 @@ function recSummary(r){
 //  RECORD MODAL
 // ════════════════════════════
 let recType=null, recFields={};
+let _hiveMode='single'; // 'single' | 'multi'
+const _SINGLE_ONLY_TYPES=['vaha','nadireni','sklizen','rojeni','matka'];
+
+function setHiveMode(mode){
+  _hiveMode=mode;
+  document.getElementById('hiveModeBtn1').classList.toggle('active',mode==='single');
+  document.getElementById('hiveModeBtn2').classList.toggle('active',mode==='multi');
+  document.getElementById('recHiveSingleWrap').style.display=mode==='single'?'':'none';
+  document.getElementById('recHiveMultiWrap').style.display=mode==='multi'?'':'none';
+  // Disable/enable single-only type buttons
+  document.querySelectorAll('.type-btn').forEach(b=>{
+    b.classList.toggle('disabled-multi',mode==='multi'&&_SINGLE_ONLY_TYPES.includes(b.dataset.type));
+  });
+  // If currently active type is single-only, deactivate it
+  if(mode==='multi'&&_SINGLE_ONLY_TYPES.includes(recType)){
+    recType=null; recFields={};
+    document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.dyn-form').forEach(f=>f.classList.remove('visible'));
+  }
+}
+
+function fillHiveCheckboxes(){
+  const list=document.getElementById('recHiveCheckboxList');
+  if(!list) return;
+  list.innerHTML='';
+  const activeHives=data.hives.filter(h=>h.status!=='prázdný');
+  activeHives.forEach(h=>{
+    const row=document.createElement('div');
+    row.className='hive-cb-row';
+    const cb=document.createElement('input');
+    cb.type='checkbox'; cb.id=`hcb_${h.id}`; cb.value=h.id;
+    const lbl=document.createElement('label');
+    lbl.htmlFor=`hcb_${h.id}`;
+    lbl.textContent=h.name;
+    row.appendChild(cb); row.appendChild(lbl);
+    list.appendChild(row);
+  });
+}
+
+function selectAllHives(checked){
+  document.querySelectorAll('#recHiveCheckboxList input[type=checkbox]').forEach(cb=>cb.checked=checked);
+}
 
 function openRecordModal(){
   const hiveId=currentHiveId;
   fillSelect('recHiveSelect',hiveId);
-  document.getElementById('recHiveGroup').style.display=(currentView==='detail')?'none':'';
+  const isDetail=currentView==='detail';
+  document.getElementById('recHiveGroup').style.display=isDetail?'none':'';
+  if(!isDetail){
+    // Always reset to single mode when opening
+    _hiveMode='single';
+    document.getElementById('hiveModeBtn1').classList.add('active');
+    document.getElementById('hiveModeBtn2').classList.remove('active');
+    document.getElementById('recHiveSingleWrap').style.display='';
+    document.getElementById('recHiveMultiWrap').style.display='none';
+    // Ensure all type buttons enabled
+    document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('disabled-multi'));
+    fillHiveCheckboxes();
+  }
   document.getElementById('recDate').value=today();
   recType=null; recFields={};
   document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('active'));
@@ -3787,14 +3871,27 @@ function togField(btn,field){
 }
 
 async function saveRecord(){
-  let hiveId=currentHiveId;
-  if(currentView!=='detail') hiveId=document.getElementById('recHiveSelect').value;
-  if(!hiveId){alert(t('alert.hive_required'));return;}
+  // Determine target hive IDs
+  let hiveIds=[];
+  if(currentView==='detail'){
+    hiveIds=[currentHiveId];
+  } else if(_hiveMode==='multi'){
+    hiveIds=[...document.querySelectorAll('#recHiveCheckboxList input:checked')].map(c=>c.value);
+    if(hiveIds.length===0){alert('Vyber alespoň jeden úl.');return;}
+  } else {
+    const id=document.getElementById('recHiveSelect').value;
+    if(!id){alert(t('alert.hive_required'));return;}
+    hiveIds=[id];
+  }
   if(!recType){alert(t('alert.type_required'));return;}
   const date=document.getElementById('recDate').value;
   if(!date){alert(t('alert.date_required'));return;}
+  const notes=document.getElementById('recNotes').value.trim();
+  const photo=_pendingRecPhoto||null;
+
+  // Build shared data payload (same for all hives)
   let d2={};
-  let hiveUpdate=null; // any changes to the hive row (nastavky, queen)
+  // For single-only types that mutate hive rows, we'll handle per-hive below
   switch(recType){
     case'cesno':  d2={aktivita:recFields.aktivita||null,pyl:recFields.pyl||null,vousy:recFields.vousy||'ne'}; break;
     case'vaha':   d2={kg:document.getElementById('recKg').value||null}; if(!d2.kg){alert(t('alert.weight_required'));return;} break;
@@ -3802,23 +3899,11 @@ async function saveRecord(){
       const n=parseInt(document.getElementById('recNadirPocet').value)||1;
       const frame=recFields.nadirFrame||'lišty';
       d2={pocet:n,frame};
-      const h=_state.hives.find(x=>x.id===hiveId);
-      if(h){
-        const newNastavky=[...(h.nastavky||[])];
-        for(let i=0;i<n;i++) newNastavky.push({id:uid(),dateAdded:date,frame});
-        hiveUpdate={nastavky:newNastavky};
-        h.nastavky=newNastavky; // optimistic local update
-      }
       break;
     }
     case'sklizen':{
-      const n=parseInt(document.getElementById('recSklizenPocet').value)||1; d2={pocet:n};
-      const h=_state.hives.find(x=>x.id===hiveId);
-      if(h){
-        const newNastavky=(h.nastavky||[]).slice(n);
-        hiveUpdate={nastavky:newNastavky};
-        h.nastavky=newNastavky; // optimistic local update
-      }
+      const n=parseInt(document.getElementById('recSklizenPocet').value)||1;
+      d2={pocet:n};
       break;
     }
     case'krmeni': d2={typ:document.getElementById('recKrmType').value,mnozstvi:document.getElementById('recKrmMn').value.trim()}; break;
@@ -3855,33 +3940,58 @@ async function saveRecord(){
           contact:document.getElementById('recQueenBreederContact').value.trim()||null,
         }),
       };
-      const newQueenEvents=['supersedura','po roji','zavedena','koupena'];
-      const h=_state.hives.find(x=>x.id===hiveId);
-      if(newQueenEvents.includes(recFields.mUdalost)){
-        const puvod={'supersedura':'přirozená náhrada','po roji':'po roji','zavedena':'zavedena',
-          'koupena':'zavedena'}[recFields.mUdalost]||'neznámý';
-        const newQueen={rok,stav:'přítomna',znacena:recFields.mZnacena||'ne',
-          ostrizena:recFields.mOstrizena||'ne', puvod,
-          ...(isKoupena&&{race:document.getElementById('recQueenRace').value||null,
-            breeder:document.getElementById('recQueenBreeder').value.trim()||null})};
-        hiveUpdate={queen:newQueen};
-        if(h) h.queen=newQueen;
-      } else if(recFields.mUdalost==='chybí'){
-        if(h&&h.queen){ h.queen={...h.queen,stav:'chybí'}; hiveUpdate={queen:h.queen}; }
-      } else if(recFields.mUdalost==='potvrzena'){
-        if(h&&h.queen){ h.queen={...h.queen,stav:'přítomna'}; hiveUpdate={queen:h.queen}; }
-      }
       break;
     }
   }
+
   try{
-    await _restPost('records',{
-      id:uid(), user_id:currentUser.id, hive_id:hiveId,
-      date, type:recType, data:d2,
-      notes:document.getElementById('recNotes').value.trim(),
-      photo:_pendingRecPhoto||null,
-    });
-    if(hiveUpdate) await _restPatch('hives','id=eq.'+hiveId,{...hiveUpdate, updated_at:new Date().toISOString()});
+    for(const hiveId of hiveIds){
+      // Per-hive mutations (nastavky, queen)
+      let hiveUpdate=null;
+      if(recType==='nadireni'){
+        const n=d2.pocet; const frame=d2.frame;
+        const h=_state.hives.find(x=>x.id===hiveId);
+        if(h){
+          const newNastavky=[...(h.nastavky||[])];
+          for(let i=0;i<n;i++) newNastavky.push({id:uid(),dateAdded:date,frame});
+          hiveUpdate={nastavky:newNastavky};
+          h.nastavky=newNastavky;
+        }
+      } else if(recType==='sklizen'){
+        const n=d2.pocet;
+        const h=_state.hives.find(x=>x.id===hiveId);
+        if(h){
+          const newNastavky=(h.nastavky||[]).slice(n);
+          hiveUpdate={nastavky:newNastavky};
+          h.nastavky=newNastavky;
+        }
+      } else if(recType==='matka'){
+        const rok=d2.rok;
+        const isKoupena=recFields.mUdalost==='koupena';
+        const newQueenEvents=['supersedura','po roji','zavedena','koupena'];
+        const h=_state.hives.find(x=>x.id===hiveId);
+        if(newQueenEvents.includes(recFields.mUdalost)){
+          const puvod={'supersedura':'přirozená náhrada','po roji':'po roji','zavedena':'zavedena',
+            'koupena':'zavedena'}[recFields.mUdalost]||'neznámý';
+          const newQueen={rok,stav:'přítomna',znacena:recFields.mZnacena||'ne',
+            ostrizena:recFields.mOstrizena||'ne', puvod,
+            ...(isKoupena&&{race:document.getElementById('recQueenRace').value||null,
+              breeder:document.getElementById('recQueenBreeder').value.trim()||null})};
+          hiveUpdate={queen:newQueen};
+          if(h) h.queen=newQueen;
+        } else if(recFields.mUdalost==='chybí'){
+          if(h&&h.queen){ h.queen={...h.queen,stav:'chybí'}; hiveUpdate={queen:h.queen}; }
+        } else if(recFields.mUdalost==='potvrzena'){
+          if(h&&h.queen){ h.queen={...h.queen,stav:'přítomna'}; hiveUpdate={queen:h.queen}; }
+        }
+      }
+
+      await _restPost('records',{
+        id:uid(), user_id:currentUser.id, hive_id:hiveId,
+        date, type:recType, data:d2, notes, photo,
+      });
+      if(hiveUpdate) await _restPatch('hives','id=eq.'+hiveId,{...hiveUpdate, updated_at:new Date().toISOString()});
+    }
     await loadAllData();
     closeModal('recordModal');
     if(currentView==='detail') renderDetail(); else renderDash();
