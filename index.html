@@ -192,6 +192,9 @@
     .hive-cb-row input[type=checkbox]{width:16px;height:16px;accent-color:var(--amber);cursor:pointer;flex-shrink:0}
     .hive-cb-row label{cursor:pointer;font-size:.82rem;color:var(--text);flex:1}
     .type-btn.disabled-multi{opacity:.3;pointer-events:none;filter:grayscale(1)}
+    .ns-obsah-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}
+    .ns-obsah-cb{display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.84rem;color:var(--text);padding:5px 10px;border:1px solid var(--s3);border-radius:8px;background:var(--s2)}
+    .ns-obsah-cb input[type=checkbox]{width:15px;height:15px;accent-color:var(--amber);cursor:pointer}
 
     /* Record type picker */
     .type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
@@ -719,7 +722,7 @@
       <!-- Single-hive select -->
       <div class="fg" id="recHiveSingleWrap">
         <label data-i18n="rec_modal.hive_label">Úl</label>
-        <select id="recHiveSelect"></select>
+        <select id="recHiveSelect" onchange="if(recType==='nastavekObs')_fillNastavekSelect()"></select>
       </div>
       <!-- Multi-hive checkboxes -->
       <div id="recHiveMultiWrap" style="display:none;margin-bottom:10px">
@@ -747,6 +750,7 @@
       <button class="type-btn" data-type="poznamka" onclick="setRecType('poznamka')"><div class="ti">📝</div><div class="tl2" data-i18n="rec.poznamka">Poznámka</div></button>
       <button class="type-btn" data-type="varroaDno" onclick="setRecType('varroaDno')"><div class="ti">🔬</div><div class="tl2" data-i18n="rec.varroaDno">Varroa – dno</div></button>
       <button class="type-btn" data-type="plasty" onclick="setRecType('plasty')"><div class="ti">📐</div><div class="tl2" data-i18n="rec.plasty">Rovnost plástů</div></button>
+      <button class="type-btn" data-type="nastavekObs" onclick="setRecType('nastavekObs')"><div class="ti">🪟</div><div class="tl2" data-i18n="rec.nastavekObs">Nástavek</div></button>
       <button class="type-btn" data-type="matka" onclick="setRecType('matka')" style="grid-column:span 3"><div class="ti">👑</div><div class="tl2" data-i18n="rec.matka">Událost matky</div></button>
     </div>
 
@@ -894,6 +898,30 @@
     </div>
 
     <div class="dyn-form" id="df-poznamka"></div>
+
+    <div class="dyn-form" id="df-nastavekObs">
+      <div class="fg">
+        <label>Nástavek</label>
+        <select id="recNastavekId"><option value="">– vyber nástavek –</option></select>
+      </div>
+      <div class="fg"><label>Stavba plástů</label>
+        <div class="tog-row" style="flex-wrap:wrap;gap:6px">
+          <button class="tog-btn" data-f="stavba" data-v="0"   onclick="togField(this,'stavba')">⬜ 0 %</button>
+          <button class="tog-btn" data-f="stavba" data-v="25"  onclick="togField(this,'stavba')">░ 25 %</button>
+          <button class="tog-btn" data-f="stavba" data-v="50"  onclick="togField(this,'stavba')">▒ 50 %</button>
+          <button class="tog-btn" data-f="stavba" data-v="75"  onclick="togField(this,'stavba')">▓ 75 %</button>
+          <button class="tog-btn" data-f="stavba" data-v="100" onclick="togField(this,'stavba')">⬛ 100 %</button>
+        </div>
+      </div>
+      <div class="fg"><label>Obsah nástavku</label>
+        <div class="ns-obsah-row">
+          <label class="ns-obsah-cb"><input type="checkbox" id="nsObsMed"/>    🍯 Med</label>
+          <label class="ns-obsah-cb"><input type="checkbox" id="nsObsPlod"/>   🥚 Plod</label>
+          <label class="ns-obsah-cb"><input type="checkbox" id="nsObsZasoby"/> 🌿 Zásoby</label>
+          <label class="ns-obsah-cb"><input type="checkbox" id="nsObsPrazdne"/>⬜ Prázdné</label>
+        </div>
+      </div>
+    </div>
 
     <div class="dyn-form" id="df-matka">
       <div class="fg"><label data-i18n="rec_modal.queen_event">Co se stalo s matkou</label>
@@ -1426,6 +1454,7 @@ const TRANSLATIONS={
     'rec.prevzeti':'Převzetí včelstva',
     'rec.varroaDno':'Varroa – dno',
     'rec.plasty':'Rovnost plástů',
+    'rec.nastavekObs':'Pozorování nástavku',
     'rec.default':'Záznam',
     // Frame types
     'frame.loucky':'🪵 Horní loučky',
@@ -1921,6 +1950,7 @@ const TRANSLATIONS={
     'rec.poznamka':'Note',
     'rec.varroaDno':'Varroa – bottom board',
     'rec.plasty':'Comb straightness',
+    'rec.nastavekObs':'Box observation',
     'frame.loucky':'🪵 Top bars only',
     'frame.delen':'🔩 Delon frame (wire)',
     'frame.hoffman':'🪟 Hoffmann frame (wood)',
@@ -2404,6 +2434,7 @@ const TRANSLATIONS={
     'rec.poznamka':'Notiz',
     'rec.varroaDno':'Varroa – Windel',
     'rec.plasty':'Wabengradheit',
+    'rec.nastavekObs':'Zargenbeobachtung',
     'frame.loucky':'🪵 Oberleisten','frame.delen':'🔩 Delon-Rahmen (Draht)','frame.hoffman':'🪟 Hoffmann-Rahmen (Holz)',
     'varroa.spad':'📋 Natürlicher Abfall','varroa.alkohol':'🧪 Alkoholtest','varroa.cukr':'🍬 Puderzuckertest',
     'varroa.ok':'✅ OK','varroa.pozor':'⚠️ Achtung','varroa.kriticke':'🚨 Kritisch',
@@ -3740,6 +3771,7 @@ const REC={
   prevzeti: {icon:'📋',color:'#7ab648'},
   varroaDno:{icon:'🔬',color:'#e05a2b'},
   plasty:   {icon:'📐',color:'#7ab648'},
+  nastavekObs:{icon:'🪟',color:'#c8a96a'},
 };
 function recMeta(r){ const m=REC[r.type]; return m?{icon:m.icon,label:t('rec.'+r.type),color:m.color}:{icon:'📋',label:t('rec.default'),color:'var(--dim)'}; }
 
@@ -3784,6 +3816,12 @@ function recSummary(r){
       const ns=d.nastavek?` · nástavek ${d.nastavek}`:'';
       return stav+ns;
     }
+    case'nastavekObs':{
+      const pos=d.pozice?`Nást. ${d.pozice}`:'';
+      const stavba=d.stavba!=null?`stavba ${d.stavba}%`:'';
+      const obsah=(d.obsah||[]).join(', ');
+      return[pos,stavba,obsah].filter(Boolean).join(' · ');
+    }
     default: return'';
   }
 }
@@ -3793,7 +3831,7 @@ function recSummary(r){
 // ════════════════════════════
 let recType=null, recFields={};
 let _hiveMode='single'; // 'single' | 'multi'
-const _SINGLE_ONLY_TYPES=['vaha','nadireni','sklizen','rojeni','matka'];
+const _SINGLE_ONLY_TYPES=['vaha','nadireni','sklizen','rojeni','matka','nastavekObs'];
 
 function setHiveMode(mode){
   _hiveMode=mode;
@@ -3856,6 +3894,9 @@ function openRecordModal(){
   document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('.dyn-form').forEach(f=>f.classList.remove('visible'));
   document.getElementById('recNotes').value='';
+  // Reset nastavekObs checkboxes
+  ['nsObsMed','nsObsPlod','nsObsZasoby','nsObsPrazdne'].forEach(id=>{const el=document.getElementById(id);if(el)el.checked=false;});
+  document.getElementById('recNastavekId').innerHTML='<option value="">– vyber nástavek –</option>';
   _pendingRecPhoto=null;
   const rpb=document.getElementById('recPhotoBox');
   rpb.querySelectorAll('img').forEach(x=>x.remove());
@@ -3868,6 +3909,30 @@ function setRecType(typ){
   document.querySelectorAll('.type-btn').forEach(b=>b.classList.toggle('active',b.dataset.type===typ));
   document.querySelectorAll('.dyn-form').forEach(f=>f.classList.remove('visible'));
   document.getElementById(`df-${typ}`)?.classList.add('visible');
+  if(typ==='nastavekObs') _fillNastavekSelect();
+}
+
+function _fillNastavekSelect(){
+  const hiveId=currentView==='detail'?currentHiveId:document.getElementById('recHiveSelect').value;
+  const sel=document.getElementById('recNastavekId');
+  sel.innerHTML='<option value="">– vyber nástavek –</option>';
+  if(!hiveId) return;
+  const h=data.hives.find(x=>x.id===hiveId);
+  const nastavky=h?.nastavky||[];
+  if(nastavky.length===0){
+    sel.innerHTML='<option value="">Žádné aktivní nástavky</option>';
+    return;
+  }
+  // index 0 = top (nejstarší), last = bottom (nejnovější) — zobrazit odspodu
+  const total=nastavky.length;
+  nastavky.forEach((n,i)=>{
+    const posZdola=total-i; // 1. zdola = nejnovější
+    const posSShora=i+1;
+    const o=document.createElement('option');
+    o.value=n.id;
+    o.textContent=`Nástavek ${posZdola}. zdola (${posSShora}. shora) – přidán ${fmtDate(n.dateAdded)}, ${n.frame}`;
+    sel.appendChild(o);
+  });
 }
 
 function togField(btn,field){
@@ -3932,6 +3997,21 @@ async function saveRecord(){
         nastavek:document.getElementById('recPlastyNastavek').value.trim()||null,
       };
       if(!d2.stav){alert('Vyber stav plástů.');return;}
+      break;
+    }
+    case'nastavekObs':{
+      const nsId=document.getElementById('recNastavekId').value;
+      if(!nsId){alert('Vyber nástavek.');return;}
+      // Find position label from current hive
+      const targetHiveId=currentView==='detail'?currentHiveId:document.getElementById('recHiveSelect').value;
+      const hh=data.hives.find(x=>x.id===targetHiveId);
+      const nsArr=hh?.nastavky||[];
+      const nsIdx=nsArr.findIndex(n=>n.id===nsId);
+      const pozice=nsIdx>=0?`${nsArr.length-nsIdx}. zdola`:null;
+      const obsah=['Med','Plod','Zásoby','Prázdné']
+        .filter((_,i)=>document.getElementById(['nsObsMed','nsObsPlod','nsObsZasoby','nsObsPrazdne'][i])?.checked)
+        .map(s=>s.toLowerCase());
+      d2={nastavekId:nsId,pozice,stavba:recFields.stavba!=null?parseInt(recFields.stavba):null,obsah};
       break;
     }
     case'matka':{
