@@ -3996,9 +3996,10 @@ function renderStan(){
       <span class="stan-num">${t('stan.num_prefix')}${esc(s.number)}</span></div>
       <div class="stan-hives">${pills||`<span style="font-size:.72rem;color:var(--dim)">${t('stan.no_hives')}</span>`}</div>
       ${(s.gps||s.address)?`<div class="stan-map-wrap" id="stan-map-${s.id}"><div class="stan-map-loading">🗺 Načítám mapu…</div></div>`:''}
-      <div style="display:flex;gap:8px;margin-top:10px">
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
         <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openStanModal('${s.id}')">${t('stan.edit')}</button>
         <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteStan('${s.id}')">${t('stan.delete')}</button>
+        <button class="btn btn-sm" style="background:#2a4018;color:#7ab648;margin-left:auto" onclick="event.stopPropagation();printStanPrehled('${s.id}')">🖨 Přehled</button>
       </div></div></div>`;
   }).join('');
   // Load maps async after render
@@ -4019,6 +4020,190 @@ async function deleteStan(id){
   renderStan();
 }
 function getStanName(id){ const s=data.stanoviste.find(x=>x.id===id); return s?`${s.number}: ${s.name}`:''; }
+
+// ════════════════════════════
+//  TISK – přehled stanoviště
+// ════════════════════════════
+function _hivePrintSVG(nastavky, status){
+  const boxes=nastavky||[];
+  const n=boxes.length;
+  const BW=62, BH=30, W=84, RH=26, EH=5, BasH=14, mX=(W-BW)/2;
+  const totalH=4+RH+EH+Math.max(n,1)*BH+BasH+2;
+  const empty=status==='prázdný'||n===0;
+  const roofC=empty?'#b0a090':'#5a2e08';
+  const roofS=empty?'#907060':'#3a1500';
+  const boxC=empty?'#e8e0d8':'#f2e2b8';
+  const boxS=empty?'#bfb0a0':'#9b6c20';
+  const baseC=empty?'#b0a090':'#4a2808';
+  const textC=empty?'#999':'#5a3200';
+
+  let svgBoxes='';
+  if(n===0){
+    svgBoxes=`<rect x="${mX}" y="${4+RH+EH}" width="${BW}" height="${BH}" fill="${boxC}" stroke="${boxS}" stroke-width="1" rx="1" stroke-dasharray="4,2"/>
+    <text x="${W/2}" y="${4+RH+EH+BH/2+4}" text-anchor="middle" font-size="8" font-family="Georgia,serif" fill="#bbb" font-style="italic">prázdný</text>`;
+  } else {
+    for(let i=0;i<n;i++){
+      const y=4+RH+EH+i*BH;
+      const fr=boxes[i]?.frame||'';
+      const label=fr==='horní loučky'?'hor. loučky':fr==='Hoffmannův rámek'?'Hoffmannův':fr==='Delonův rámek'?'Delonův':fr==='nezadán'?'?':fr==='Bez rámků'?'bez rámků':'';
+      svgBoxes+=`<rect x="${mX}" y="${y}" width="${BW}" height="${BH}" fill="${boxC}" stroke="${boxS}" stroke-width="1.2" rx="1"/>
+      <line x1="${mX+4}" y1="${y+BH*0.38}" x2="${mX+BW-4}" y2="${y+BH*0.38}" stroke="${boxS}" stroke-width="0.35" opacity="0.4"/>
+      <line x1="${mX+4}" y1="${y+BH*0.72}" x2="${mX+BW-4}" y2="${y+BH*0.72}" stroke="${boxS}" stroke-width="0.35" opacity="0.4"/>
+      <text x="${W/2}" y="${y+BH/2+3.5}" text-anchor="middle" font-size="7.5" font-family="Georgia,serif" fill="${textC}" font-style="italic">${label}</text>`;
+    }
+  }
+  const eaveY=4+RH;
+  const baseY=4+RH+EH+Math.max(n,1)*BH;
+  return`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${totalH}" width="${W}" height="${totalH}">
+    <polygon points="${W/2},3 ${mX-9},${eaveY} ${mX+BW+9},${eaveY}" fill="${roofC}" stroke="${roofS}" stroke-width="1.2"/>
+    <rect x="${mX-7}" y="${eaveY-1}" width="${BW+14}" height="${EH+1}" fill="${roofC}" stroke="${roofS}" stroke-width="1" rx="1"/>
+    ${svgBoxes}
+    <rect x="${mX}" y="${baseY}" width="${BW}" height="${BasH}" fill="${baseC}" stroke="${roofS}" stroke-width="1" rx="1"/>
+    <rect x="${W/2-13}" y="${baseY+BasH-6}" width="26" height="5" fill="#180800" rx="1"/>
+  </svg>`;
+}
+
+function printStanPrehled(stanId){
+  const s=data.stanoviste.find(x=>x.id===stanId);
+  if(!s) return;
+  const activeHives=data.hives.filter(h=>h.stanId===stanId&&h.status!=='prázdný');
+  if(!activeHives.length){alert('Na tomto stanovišti nejsou žádná aktivní včelstva.');return;}
+
+  const dateStr=new Date().toLocaleDateString('cs-CZ',{day:'numeric',month:'long',year:'numeric'});
+  const beekeeperName=[profile.jmeno,profile.prijmeni].filter(Boolean).join(' ')||profile.firma||'';
+
+  const hiveCards=activeHives.map(h=>{
+    const recs=data.records.filter(r=>r.hiveId===h.id).sort((a,b)=>b.date.localeCompare(a.date));
+    const lastRec=recs[0];
+    const lastRecStr=lastRec?fmtDate(lastRec.date):'—';
+    const prevzeti=recs.find(r=>r.type==='prevzeti');
+    const chovatel=prevzeti?.data?.breeder||h.origin?.breeder||'—';
+    const prevzetiDatum=prevzeti?fmtDate(prevzeti.date):'—';
+    const matka=h.queen?.stav||'—';
+    const boxes=h.nastavky?.length||0;
+    // Frame types summary
+    const frameList=(h.nastavky||[]).map((b,i)=>{
+      const fr=b.frame||'—';
+      return`<tr><td>${i+1}.</td><td>${fr}</td></tr>`;
+    }).join('');
+
+    const svg=_hivePrintSVG(h.nastavky,h.status);
+    return`<div class="hive-card">
+      <div class="hive-card-top">
+        <div class="hive-card-name">${h.name}</div>
+        <div class="hive-card-status">${h.status||'aktivní'}</div>
+      </div>
+      <div class="hive-card-body">
+        <div class="hive-visual">${svg}</div>
+        <table class="hive-info-table">
+          <tr><td>Nástavky</td><td>${boxes} ks</td></tr>
+          <tr><td>Typ úlu</td><td>${h.type||'Warré'}</td></tr>
+          <tr><td>Matka</td><td>${matka}</td></tr>
+          <tr><td>Chovatel</td><td>${chovatel}</td></tr>
+          <tr><td>Převzetí</td><td>${prevzetiDatum}</td></tr>
+          <tr><td>Posl. záznam</td><td>${lastRecStr}</td></tr>
+        </table>
+        ${boxes>0?`<div class="frames-section"><div class="notes-label" style="margin-top:7px;margin-bottom:3px">Rámky v nástavcích</div><table class="frames-table">${frameList}</table></div>`:''}
+        <div class="notes-section">
+          <div class="notes-label">Poznámky</div>
+          <div class="notes-line"></div>
+          <div class="notes-line"></div>
+          <div class="notes-line"></div>
+          <div class="notes-line"></div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const html=`<!DOCTYPE html>
+<html lang="cs"><head>
+<meta charset="UTF-8"/>
+<title>Přehled – ${s.name} – Včelník</title>
+<style>
+@page{margin:12mm;size:A4 portrait}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Georgia,'Times New Roman',serif;color:#2d1500;background:white;font-size:10pt}
+@media screen{
+  body{background:#b8843a;min-height:100vh;padding:0 0 30px}
+  .page{background:#fdf8f0;max-width:210mm;margin:0 auto;padding:14mm;box-shadow:0 8px 40px rgba(0,0,0,.45)}
+  .print-bar{background:#2d1200;color:#f5c842;padding:12px 20px;display:flex;align-items:center;justify-content:center;gap:16px;font-family:sans-serif;font-size:13px;position:sticky;top:0;z-index:99}
+  .print-bar button{border:none;padding:8px 22px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer}
+  .btn-print{background:#f5a623;color:#1a0800}
+  .btn-close{background:#555;color:#fff}
+}
+@media print{.print-bar{display:none!important}.page{padding:0}}
+/* Header */
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;padding-bottom:10px;margin-bottom:6px;border-bottom:2px solid #8b5010}
+.hdr-left{display:flex;align-items:center;gap:10px}
+.hdr-bee{font-size:30px;line-height:1}
+.hdr-title{font-size:22px;font-weight:bold;color:#3d1f00;font-style:italic;letter-spacing:.5px}
+.hdr-sub{font-size:10px;color:#8b6030;margin-top:2px;letter-spacing:.3px}
+.hdr-right{text-align:right;font-size:9.5px;color:#666;line-height:1.7}
+.hdr-stan{font-size:14px;font-weight:bold;color:#3d1f00;display:block}
+.hdr-addr{font-size:9px;color:#8b6030}
+/* Divider */
+.divider{text-align:center;color:#c8961a;font-size:13px;letter-spacing:10px;margin:8px 0 12px}
+/* Grid */
+.hive-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
+/* Card */
+.hive-card{border:1.5px solid #c8961a;border-radius:9px;overflow:hidden;background:#fffdf6;display:flex;flex-direction:column;page-break-inside:avoid}
+.hive-card-top{background:linear-gradient(135deg,#3d1f00 0%,#5c3010 100%);color:#f5c842;padding:7px 10px;display:flex;align-items:center;justify-content:space-between}
+.hive-card-name{font-size:11px;font-weight:bold;letter-spacing:.3px}
+.hive-card-status{font-size:8.5px;opacity:.7;font-style:italic}
+.hive-card-body{padding:9px;flex:1;display:flex;flex-direction:column}
+.hive-visual{display:flex;justify-content:center;margin:4px 0 7px}
+.hive-info-table{width:100%;border-collapse:collapse;font-size:8.5px}
+.hive-info-table td{padding:2px 3px;line-height:1.45;vertical-align:top}
+.hive-info-table td:first-child{color:#8b5010;font-weight:bold;white-space:nowrap;width:42%}
+.frames-section{margin-top:5px}
+.frames-table{width:100%;border-collapse:collapse;font-size:7.8px}
+.frames-table td{padding:1.5px 3px;color:#5a3200}
+.frames-table td:first-child{color:#a07030;width:18px}
+/* Notes */
+.notes-section{margin-top:8px;padding-top:6px;border-top:1px dashed #d4b06a;flex:1}
+.notes-label{font-size:7px;text-transform:uppercase;letter-spacing:.9px;color:#c0a878;margin-bottom:5px}
+.notes-line{border-bottom:1px solid #e8d8b8;height:15px}
+/* Footer */
+.page-footer{margin-top:16px;padding-top:8px;border-top:1px solid #c8961a;display:flex;justify-content:space-between;align-items:center;font-size:8px;color:#aaa}
+.footer-logo{font-style:italic;color:#8b5010}
+/* Honeycomb bg decoration */
+.honey-deco{position:absolute;opacity:.04;font-size:60px;right:20mm;top:8mm;pointer-events:none}
+</style></head>
+<body>
+<div class="print-bar">🐝 Tisková verze — přehled stanoviště
+  <button class="btn-print" onclick="window.print()">🖨 Vytisknout / PDF</button>
+  <button class="btn-close" onclick="window.close()">✕ Zavřít</button>
+</div>
+<div class="page" style="position:relative">
+  <div class="honey-deco">🍯</div>
+  <div class="page-header">
+    <div class="hdr-left">
+      <div class="hdr-bee">🐝</div>
+      <div>
+        <div class="hdr-title">Včelník</div>
+        <div class="hdr-sub">Správa včelstev Warré</div>
+      </div>
+    </div>
+    <div class="hdr-right">
+      <span class="hdr-stan">📍 ${s.number ? s.number+' – ' : ''}${s.name}</span>
+      ${s.address?`<span class="hdr-addr">${s.address}</span><br/>`:''}
+      ${beekeeperName?`<span>${beekeeperName}</span><br/>`:''}
+      <span>Vytištěno ${dateStr}</span>
+    </div>
+  </div>
+  <div class="divider">· · · · ·</div>
+  <div class="hive-grid">${hiveCards}</div>
+  <div class="page-footer">
+    <span class="footer-logo">🐝 Včelník — správa včelstev Warré</span>
+    <span>Aktivních včelstev na stanovišti: ${activeHives.length} &nbsp;|&nbsp; ${dateStr}</span>
+  </div>
+</div>
+</body></html>`;
+
+  const w=window.open('','_blank','width=900,height=700');
+  w.document.write(html);
+  w.document.close();
+}
 
 // ════════════════════════════
 //  TASKS
