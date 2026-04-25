@@ -1251,6 +1251,7 @@ const TRANSLATIONS={
     'nav.pruvodce':'Průvodce',
     // Dashboard
     'dash.colonies':'Včelstev',
+    'dash.hives_total':'z {n} úlů celkem',
     'dash.boxes_total':'Nástavků celkem',
     'dash.apiaries':'Stanovišť',
     'dash.open_tasks':'Otevřené úkoly',
@@ -1744,6 +1745,7 @@ const TRANSLATIONS={
     'nav.pruvodce':'Guide',
     // Dashboard
     'dash.colonies':'Colonies',
+    'dash.hives_total':'{n} hives total',
     'dash.boxes_total':'Boxes total',
     'dash.apiaries':'Apiaries',
     'dash.open_tasks':'Open tasks',
@@ -2223,6 +2225,7 @@ const TRANSLATIONS={
     'nav.pruvodce':'Kalender',
     // Dashboard
     'dash.colonies':'Völker',
+    'dash.hives_total':'{n} Beuten gesamt',
     'dash.boxes_total':'Zargen gesamt',
     'dash.apiaries':'Standorte',
     'dash.open_tasks':'Offene Aufgaben',
@@ -3081,8 +3084,10 @@ function renderPruvodce(){
 function renderDash(){
   const totalB=data.hives.reduce((s,h)=>s+(h.nastavky?.length||0),0);
   const openT=data.tasks.filter(t=>!t.done).length;
+  const totalHives=data.hives.length;
+  const activeColonies=data.hives.filter(h=>h.status!=='prázdný').length;
   document.getElementById('dashGrid').innerHTML=`
-    <div class="dash-box"><span class="dash-icon">🐝</span><div><div class="dash-val">${data.hives.length}</div><div class="dash-label">${t('dash.colonies')}</div></div></div>
+    <div class="dash-box"><span class="dash-icon">🐝</span><div><div class="dash-val">${activeColonies}</div><div class="dash-label">${t('dash.colonies')}</div>${totalHives>activeColonies?`<div style="font-size:.65rem;color:var(--dim);margin-top:2px">${t('dash.hives_total',{n:totalHives})}</div>`:''}</div></div>
     <div class="dash-box"><span class="dash-icon">📦</span><div><div class="dash-val">${totalB}</div><div class="dash-label">${t('dash.boxes_total')}</div></div></div>
     <div class="dash-box"><span class="dash-icon">📍</span><div><div class="dash-val">${data.stanoviste.length}</div><div class="dash-label">${t('dash.apiaries')}</div></div></div>
     <div class="dash-box"><span class="dash-icon">✅</span><div><div class="dash-val">${openT}</div><div class="dash-label">${t('dash.open_tasks')}</div></div></div>`;
